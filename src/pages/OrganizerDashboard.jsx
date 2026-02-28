@@ -132,7 +132,6 @@ export default function OrganizerDashboard() {
           <div className="cutoff-container">
             <h2 style={{ color: '#cc0000', fontSize: '5rem', fontWeight: '800' }}>ATTENDANCE CUT-OFF</h2>
             <p style={{ fontSize: '2rem', color: '#000' }}>The scanning period for this event has ended.</p>
-            {/* Added the export button here too so you can export immediately after cutoff */}
             <button className="btn btn-primary" onClick={exportToCSV} style={{ marginTop: '20px' }}>
               📊 Export Attendance to Excel
             </button>
