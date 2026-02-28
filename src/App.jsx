@@ -2,19 +2,24 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import OrganizerDashboard from './pages/OrganizerDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import './App.css';
+import ndmcLogo from './assets/NDMC_Seal.png';
 
 function App() {
   return (
     <Router>
-      <div className="qsams-container">
-        <nav className="top-nav">
-          <h1 className="logo">QSAMS</h1>
-          <div className="nav-links">
-            <Link to="/">Student Scan</Link>
-            <Link to="/organizer">Organizer Panel</Link>
-          </div>
-        </nav>
-
+   
+<div className="qsams-container">
+  <nav className="top-nav">
+  <img src={ndmcLogo} alt="NDMC Seal" className="school-seal-img" />
+  
+  <h1 className="logo">QSAMS</h1>
+  <p className="school-title">Notre Dame of Midsayap College</p>
+  
+  <div className="nav-links">
+    <Link to="/">Student Scan</Link>
+    <Link to="/organizer">Organizer Panel</Link>
+  </div>
+</nav>
         <main className="content">
           <Routes>
             <Route path="/" element={<StudentDashboard />} />

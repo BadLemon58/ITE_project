@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment variables (Safety first!)
+.env
+.env.local
+
+# IDE and OS files
+.vscode/
+.DS_Store
+Thumbs.db

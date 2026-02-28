@@ -1,121 +1,140 @@
-/* --- GLOBAL STYLES --- */
+/* --- GLOBAL RESET & CENTERING --- */
 body {
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #121212; /* Dark theme for a modern feel */
-  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff !important;
   margin: 0;
   display: flex;
-  justify-content: center; /* Horizontal centering */
-  align-items: center;     /* Vertical centering */
-  min-height: 100vh;       /* Uses full screen height */
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .qsams-container {
   width: 100%;
-  max-width: 450px;
+  max-width: 550px; 
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: center; 
   padding: 20px;
 }
 
-/* --- NAVIGATION STYLES --- */
+/* --- NAVIGATION & TITLES --- */
 .top-nav {
   text-align: center;
-  margin-bottom: 30px;
+  width: 100%;
+  margin-bottom: 25px;
 }
 
 .logo {
+  color: #006400 !important;
   font-size: 3rem;
   font-weight: 800;
-  letter-spacing: 2px;
-  margin-bottom: 10px;
-  color: #ffffff;
+  margin: 0;
+}
+
+.school-title {
+  color: #006400 !important; 
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 5px 0 15px 0;
 }
 
 .nav-links {
   display: flex;
-  gap: 20px;
   justify-content: center;
+  gap: 15px;
 }
 
 .nav-links a {
-  color: #4dabf7;
+  color: #006400;
   text-decoration: none;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: bold;
+}
+.school-seal-img {
+  width: 90px;          /* Adjust this number to make it bigger or smaller */
+  height: auto;         /* Keeps the image perfectly round/proportional */
+  margin-bottom: 5px;   /* Adds a tiny bit of space before the QSAMS text */
+  filter: drop-shadow(0px 4px 6px rgba(0, 100, 0, 0.2)); /* Optional: Adds a subtle green shadow */
 }
 
-.nav-links a:hover {
-  text-decoration: underline;
-}
-
-/* --- CARD STYLES --- */
+/* --- THE CARD --- */
 .card {
-  background: #1e1e1e;
+  background: #ffffff;
   width: 100%;
-  padding: 40px 30px;
+  padding: 45px 35px; 
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border: 1px solid #006400; 
+  border-top: 8px solid #006400; 
+  box-shadow: 0 10px 40px rgba(0, 100, 0, 0.1);
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centers items inside the card */
-  text-align: center;
+  align-items: center; 
+  box-sizing: border-box;
+}
+.card h2 {
+  color: #006400 !important; 
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 2rem; 
 }
 
-.student-card { border-top: 6px solid #2ecc71; }
-.organizer-card { border-top: 6px solid #3498db; }
+/* --- USER BAR --- */
+.user-bar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  font-size: 0.85rem;
+}
 
-/* --- INPUTS & BUTTONS --- */
-.action-buttons, .manual-form {
+.logout-btn {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* --- BUTTONS (Centered) --- */
+.action-buttons {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  margin-top: 20px;
+  align-items: center; /* Forces buttons to center themselves */
+  gap: 12px;
+}
+
+.btn-primary { 
+  background-color: #006400 !important; 
+  color: white !important; 
+  width: 100%; /* Keeps the main button full width */
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid #006400;
+  color: #006400;
+  width: 100%; /* Makes manual entry same width as scanner button */
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .input-field {
   width: 100%;
-  padding: 14px;
-  background: #2b2b2b;
-  border: 1px solid #444;
+  padding: 12px;
+  border: 2px solid #eee;
   border-radius: 8px;
-  color: white;
-  font-size: 1rem;
-  box-sizing: border-box; /* Important for centering width */
-}
-
-.btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  border: none;
-  font-size: 1rem;
-  transition: opacity 0.2s;
-}
-
-.btn-success { background: #2ecc71; color: #fff; }
-.btn-primary { background: #3498db; color: #fff; }
-.btn-outline { background: transparent; border: 2px solid #2ecc71; color: #2ecc71; }
-.btn:hover { opacity: 0.9; }
-
-/* --- MESSAGES --- */
-.message-box {
-  margin-top: 25px;
-  padding: 15px;
-  border-radius: 8px;
-  width: 100%;
-  background: rgba(46, 204, 113, 0.1);
-  border: 1px solid #2ecc71;
-  color: #2ecc71;
-  font-weight: 600;
-}
-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  margin-top: 10px;
+  box-sizing: border-box;
 }
