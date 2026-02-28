@@ -1,0 +1,115 @@
+/* --- GLOBAL STYLES --- */
+body {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #121212; /* Dark theme for a modern feel */
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  justify-content: center; /* Horizontal centering */
+  align-items: center;     /* Vertical centering */
+  min-height: 100vh;       /* Uses full screen height */
+}
+
+.qsams-container {
+  width: 100%;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+/* --- NAVIGATION STYLES --- */
+.top-nav {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.nav-links a {
+  color: #4dabf7;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+/* --- CARD STYLES --- */
+.card {
+  background: #1e1e1e;
+  width: 100%;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers items inside the card */
+  text-align: center;
+}
+
+.student-card { border-top: 6px solid #2ecc71; }
+.organizer-card { border-top: 6px solid #3498db; }
+
+/* --- INPUTS & BUTTONS --- */
+.action-buttons, .manual-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 14px;
+  background: #2b2b2b;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  box-sizing: border-box; /* Important for centering width */
+}
+
+.btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  transition: opacity 0.2s;
+}
+
+.btn-success { background: #2ecc71; color: #fff; }
+.btn-primary { background: #3498db; color: #fff; }
+.btn-outline { background: transparent; border: 2px solid #2ecc71; color: #2ecc71; }
+.btn:hover { opacity: 0.9; }
+
+/* --- MESSAGES --- */
+.message-box {
+  margin-top: 25px;
+  padding: 15px;
+  border-radius: 8px;
+  width: 100%;
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid #2ecc71;
+  color: #2ecc71;
+  font-weight: 600;
+}
