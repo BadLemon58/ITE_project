@@ -20,10 +20,19 @@ export default function StudentDashboard() {
 
   const handleRegister = (e) => {
     e.preventDefault();
-    if (studentId.trim()) {
-      localStorage.setItem('qsams_student_id', studentId);
-      setIsRegistered(true);
+    const cleanId = studentId.trim();
+
+    // Check if the length is at least 8 characters (allows dashes and more than 8)
+    if (cleanId.length < 8) {
+      // Reject it and show an error
+      setMessage("❌ Invalid ID. It must be at least 8 characters long.");
+      return;
     }
+
+    // If it passes the test, save it
+    localStorage.setItem('qsams_student_id', cleanId);
+    setIsRegistered(true);
+    setMessage(""); // Clear the message so the scanner view is clean
   };
 
   const handleLogout = () => {
@@ -61,36 +70,46 @@ export default function StudentDashboard() {
     submitAttendance(parts[0]);
   };
 
-  const submitAttendance = async (eventId) => {
+  const submitAttendance = async (rawEventId) => {
+    // 1. Clean the ID by removing invisible spaces/newlines
+    const cleanEventId = rawEventId.trim(); 
+    
     setMessage("⏳ Validating with NDMC Database...");
+    
     const { error } = await supabase
       .from('attendance')
-      .insert([{ event_id: eventId, student_id: studentId }]);
+      .insert([{ event_id: cleanEventId, student_id: studentId }]);
 
     if (error) {
-      // Logic to change the error message based on the problem
       if (error.code === '23503') {
-        setMessage(`❌ Error: Event "${eventId}" does not exist.`);
+        setMessage(`❌ Error: Event "${cleanEventId}" or Student "${studentId}" is missing.`);
       } else if (error.code === '23505') {
         setMessage("⚠️ You have already scanned for this event.");
       } else {
         setMessage(`❌ Error: ${error.message}`);
       }
     } else {
-      setMessage(`✅ Success! Attendance logged for ${eventId}.`);
+      setMessage(`✅ Success! Attendance logged for ${cleanEventId}.`);
     }
   };
 
   if (!isRegistered) {
     return (
-      <div className="card student-card">
+      <div className="card">
         <h2>Student Registration</h2>
-        <form onSubmit={handleRegister} className="manual-form">
-          <input type="text" placeholder="Enter ID (e.g. 2026-0001)" 
-            value={studentId} onChange={(e) => setStudentId(e.target.value)}
-            className="input-field" required />
+        <form onSubmit={handleRegister} className="manual-form" noValidate>
+          <input 
+            type="text" 
+            placeholder="Enter ID" 
+            value={studentId} 
+            onChange={(e) => setStudentId(e.target.value)} 
+            className="input-field" 
+            required 
+          />
           <button type="submit" className="btn btn-primary">Save ID</button>
         </form>
+        
+        {message && <div className="message-box" style={{ color: 'red', borderColor: 'red', background: '#ffe6e6' }}>{message}</div>}
       </div>
     );
   }

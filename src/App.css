@@ -27,14 +27,14 @@ body {
 }
 
 .logo {
-  color: #006400 !important;
+  color: #006400 !important; /* NDMC Green */
   font-size: 3rem;
   font-weight: 800;
   margin: 0;
 }
 
 .school-title {
-  color: #006400 !important; 
+  color: #000000 !important; /* Pure Black for high contrast */
   font-weight: 600;
   font-size: 0.9rem;
   margin: 5px 0 15px 0;
@@ -47,15 +47,16 @@ body {
 }
 
 .nav-links a {
-  color: #006400;
+  color: #006400; /* NDMC Green */
   text-decoration: none;
   font-weight: bold;
 }
+
 .school-seal-img {
-  width: 90px;          /* Adjust this number to make it bigger or smaller */
-  height: auto;         /* Keeps the image perfectly round/proportional */
-  margin-bottom: 5px;   /* Adds a tiny bit of space before the QSAMS text */
-  filter: drop-shadow(0px 4px 6px rgba(0, 100, 0, 0.2)); /* Optional: Adds a subtle green shadow */
+  width: 90px;          
+  height: auto;         
+  margin-bottom: 5px;   
+  filter: drop-shadow(0px 4px 6px rgba(0, 100, 0, 0.2)); 
 }
 
 /* --- THE CARD --- */
@@ -71,9 +72,11 @@ body {
   flex-direction: column;
   align-items: center; 
   box-sizing: border-box;
+  color: #000000; /* Pure Black general text */
 }
+
 .card h2 {
-  color: #006400 !important; 
+  color: #006400 !important; /* NDMC Green */
   margin-top: 0;
   margin-bottom: 25px;
   font-size: 2rem; 
@@ -87,11 +90,12 @@ body {
   align-items: center;
   margin-bottom: 25px;
   font-size: 0.85rem;
+  color: #000000; /* Pure Black */
 }
 
 .logout-btn {
-  background: #333;
-  color: white;
+  background: #000000; /* Changed from grey (#333) to Pure Black */
+  color: #ffffff;
   border: none;
   padding: 6px 12px;
   border-radius: 6px;
@@ -104,14 +108,14 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Forces buttons to center themselves */
+  align-items: center; 
   gap: 12px;
 }
 
 .btn-primary { 
-  background-color: #006400 !important; 
-  color: white !important; 
-  width: 100%; /* Keeps the main button full width */
+  background-color: #006400 !important; /* NDMC Green */
+  color: #ffffff !important; 
+  width: 100%; 
   padding: 14px;
   border: none;
   border-radius: 8px;
@@ -121,20 +125,126 @@ body {
 
 .btn-outline {
   background: transparent;
-  border: 2px solid #006400;
+  border: 2px solid #006400; /* NDMC Green */
   color: #006400;
-  width: 100%; /* Makes manual entry same width as scanner button */
+  width: 100%; 
   padding: 12px;
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
 }
 
+/* --- INPUT FIELD & FORMS --- */
 .input-field {
   width: 100%;
   padding: 12px;
-  border: 2px solid #eee;
+  border: 2px solid #006400; /* Changed from grey (#eee) to NDMC Green */
   border-radius: 8px;
   margin-top: 10px;
   box-sizing: border-box;
+  color: #000000; /* Pure black text when typing */
+  background-color: #ffffff;
+}
+
+/* Forces the placeholder text to be green instead of default grey */
+.input-field::placeholder {
+  color: #006400; 
+  opacity: 0.7;   
+}
+
+.manual-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-top: 10px;
+}
+#reader {
+  width: 100%;
+  margin-top: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #006400; /* NDMC Green border for the camera box */
+  background-color: #000000; /* Black background while the camera loads */
+  display: flex;
+  justify-content: center;
+}
+#reader video {
+  width: 100% !important;
+  border-radius: 10px;
+}
+/* --- ORGANIZER PANEL STYLES --- */
+
+/* 1. Styles the Stop Session button and adds space below it */
+.btn-danger {
+  background-color: #cc0000 !important; /* A clean, professional Red */
+  color: #ffffff !important;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 35px; /* <--- THIS IS THE MAGIC NUMBER THAT ADDS THE SPACE! */
+  margin-top: 10px;
+}
+
+/* 2. Perfectly centers the QR code and the timer text */
+.qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.status-panel {
+  text-align: center;
+  margin-top: 20px; /* Adds a little breathing room below the QR code too */
+}
+/* --- FULLSCREEN PRESENTATION MODE --- */
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #ffffff;
+  z-index: 9999; /* Forces this to sit on top of the navigation bar and background */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.fullscreen-title {
+  color: #006400; /* NDMC Green */
+  font-size: 3.5rem;
+  margin-bottom: 40px;
+  margin-top: 0;
+}
+
+.fullscreen-timer {
+  font-size: 2.5rem;
+  color: #000000;
+  margin-top: 40px;
+  margin-bottom: 10px;
+}
+
+.btn-close-fullscreen {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  background-color: #cc0000;
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.btn-close-fullscreen:hover {
+  background-color: #aa0000;
 }
