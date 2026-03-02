@@ -46,13 +46,10 @@ export default function OrganizerDashboard() {
 
   const handleStartSession = async () => {
     const cleanEventId = eventId.trim();
-
-    // 1. Basic validation
     if (cleanEventId.length === 0) {
       alert("⚠️ Please enter an Event ID before starting.");
       return;
     }
-
     const duration = parseInt(durationInput, 10);
     if (isNaN(duration) || duration <= 0) {
       alert("⚠️ Please enter a valid duration in minutes.");
@@ -61,17 +58,14 @@ export default function OrganizerDashboard() {
 
     const { error } = await supabase
       .from('events')
-      .upsert(
-        { 
+      .upsert({ 
           event_id: cleanEventId, 
           event_name: `Session: ${cleanEventId}`, 
           event_date: new Date().toISOString().split('T')[0] 
-        }, 
-        { onConflict: 'event_id' }
-      );
+        }, { onConflict: 'event_id' });
 
     if (error) {
-      alert("❌ Database Error: Could not sync event. " + error.message);
+      alert("❌ Database Error: " + error.message);
       return;
     }
 
@@ -92,13 +86,11 @@ export default function OrganizerDashboard() {
       .eq('event_id', eventId.trim());
 
     if (error) return alert("Error fetching data: " + error.message);
-    if (data.length === 0) return alert("No attendance records found for this event.");
+    if (data.length === 0) return alert("No records found.");
 
     let csvContent = "Student ID,Scan Time\n";
-
     data.forEach(row => {
       const time = new Date(row.created_at).toLocaleString();
-      
       csvContent += `${row.student_id},"${time}"\n`;
     });
 
@@ -110,13 +102,14 @@ export default function OrganizerDashboard() {
     link.click();
   };
 
+  // --- FULLSCREEN VIEW (EXPORT REMOVED HERE) ---
   if (isFullscreen && isActive) {
     return (
       <div className="fullscreen-overlay">
         <button className="btn-close-fullscreen" onClick={() => {
           setIsFullscreen(false);
           if (sessionTimeLeft === 0) setIsActive(false);
-        }}> ✖ Exit </button>
+        }}> ✖ Exit Presentation </button>
         
         <h1 className="fullscreen-title">Event: {eventId.trim()}</h1>
         
@@ -131,10 +124,7 @@ export default function OrganizerDashboard() {
         ) : (
           <div className="cutoff-container">
             <h2 style={{ color: '#cc0000', fontSize: '5rem', fontWeight: '800' }}>ATTENDANCE CUT-OFF</h2>
-            <p style={{ fontSize: '2rem', color: '#000' }}>The scanning period for this event has ended.</p>
-            <button className="btn btn-primary" onClick={exportToCSV} style={{ marginTop: '20px' }}>
-              📊 Export Attendance to Excel
-            </button>
+            <p style={{ fontSize: '2rem', color: '#000' }}>The scanning period has ended.</p>
           </div>
         )}
       </div>
@@ -146,7 +136,7 @@ export default function OrganizerDashboard() {
       <h2>Organizer Panel</h2>
       {!isActive ? (
         <div className="manual-form">
-          <input type="text" placeholder="Event ID (e.g. EVT-101)" className="input-field" 
+          <input type="text" placeholder="Event ID" className="input-field" 
             value={eventId} onChange={(e) => setEventId(e.target.value.toUpperCase())} />
           <input type="number" placeholder="Duration (minutes)" className="input-field" 
             value={durationInput} onChange={(e) => setDurationInput(e.target.value)} />
@@ -154,19 +144,24 @@ export default function OrganizerDashboard() {
         </div>
       ) : (
         <>
-          <p>Active Event: <strong>{eventId.trim()}</strong></p>
-          <p style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '1.2rem' }}>Time Left: {formatTime(sessionTimeLeft)}</p>
+         <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '6px 12px', borderRadius: '6px', display: 'inline-block' }}>
+              Active Event: <strong>{eventId.trim()}</strong>
+          </p>
+          <p style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '20px' }}>
+            Time Left: {formatTime(sessionTimeLeft)}
+          </p>
+          
           <div className="action-buttons">
             <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
             <button className="btn btn-danger" onClick={() => setIsActive(false)}>Stop Session</button>
-            {/* Added the Export Button to the main dashboard */}
-            <button className="btn btn-outline" onClick={exportToCSV} style={{ border: '2px solid #000', color: '#000' }}>
-              📊 Export CSV
-            </button>
+            <button className="btn btn-outline" onClick={exportToCSV}>📊 Export CSV</button>
           </div>
+
           <div className="qr-container">
             <QRCodeSVG value={secureToken} size={250} level="H" />
-            <p>Next update: {timeLeft}s</p>
+           <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '6px 12px', borderRadius: '6px', display: 'inline-block', marginTop: '15px' }}>
+            Next update: <strong>{timeLeft}s</strong>
+          </p>
           </div>
         </>
       )}

@@ -1,88 +1,94 @@
-/* --- GLOBAL RESET & CENTERING --- */
+/* --- GLOBAL RESET & LAYOUT --- */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #ffffff !important;
+  background-color: #f4f7f4 !important; /* Light grey-green tint for contrast */
   margin: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; 
   min-height: 100vh;
+  padding: 40px 20px;
 }
 
 .qsams-container {
   width: 100%;
-  max-width: 550px; 
+  max-width: 500px; 
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center; 
-  padding: 20px;
 }
 
-/* --- NAVIGATION & TITLES --- */
+/* --- NAVIGATION & LOGO --- */
 .top-nav {
   text-align: center;
   width: 100%;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
+}
+
+.school-seal-img {
+  width: 120px;          
+  height: auto;         
+  margin-bottom: 15px;   
+  filter: drop-shadow(0px 4px 6px rgba(0, 100, 0, 0.2)); 
 }
 
 .logo {
-  color: #006400 !important; /* NDMC Green */
-  font-size: 3rem;
+  color: #006400 !important;
+  font-size: 2.5rem;
   font-weight: 800;
   margin: 0;
 }
 
 .school-title {
-  color: #000000 !important; /* Pure Black for high contrast */
+  color: #000000 !important;
   font-weight: 600;
   font-size: 0.9rem;
-  margin: 5px 0 15px 0;
+  margin: 5px 0 20px 0;
 }
 
 .nav-links {
   display: flex;
   justify-content: center;
-  gap: 15px;
+  gap: 20px;
 }
 
 .nav-links a {
-  color: #006400; /* NDMC Green */
+  color: #006400;
   text-decoration: none;
   font-weight: bold;
+  font-size: 0.9rem;
+  padding: 5px 10px;
+  border-bottom: 2px solid transparent;
+  transition: 0.2s;
 }
 
-.school-seal-img {
-  width: 90px;          
-  height: auto;         
-  margin-bottom: 5px;   
-  filter: drop-shadow(0px 4px 6px rgba(0, 100, 0, 0.2)); 
+.nav-links a:hover {
+  border-bottom: 2px solid #006400;
 }
 
 /* --- THE CARD --- */
 .card {
   background: #ffffff;
   width: 100%;
-  padding: 45px 35px; 
+  padding: 40px 30px; 
   border-radius: 16px;
   border: 1px solid #006400; 
   border-top: 8px solid #006400; 
-  box-shadow: 0 10px 40px rgba(0, 100, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center; 
   box-sizing: border-box;
-  color: #000000; /* Pure Black general text */
 }
 
 .card h2 {
-  color: #006400 !important; /* NDMC Green */
-  margin-top: 0;
-  margin-bottom: 25px;
-  font-size: 2rem; 
+  color: #006400 !important;
+  margin: 0 0 25px 0;
+  font-size: 1.8rem; 
+  text-align: center;
 }
 
-/* --- USER BAR --- */
 .user-bar {
   width: 100%;
   display: flex;
@@ -90,11 +96,14 @@ body {
   align-items: center;
   margin-bottom: 25px;
   font-size: 0.85rem;
-  color: #000000; /* Pure Black */
+  color: #000000;
+  background-color: #e0e0e0; 
+  padding: 10px; 
+  border-radius: 8px;
 }
 
 .logout-btn {
-  background: #000000; /* Changed from grey (#333) to Pure Black */
+  background: #000000;
   color: #ffffff;
   border: none;
   padding: 6px 12px;
@@ -103,148 +112,182 @@ body {
   font-weight: bold;
 }
 
-/* --- BUTTONS (Centered) --- */
+/* --- BUTTONS & ACTIONS --- */
 .action-buttons {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center; 
-  gap: 12px;
+  gap: 12px; /* Uniform spacing for all buttons */
+  margin-bottom: 25px;
+}
+
+.btn-primary, .btn-danger, .btn-outline {
+  width: 100%; 
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: transform 0.1s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .btn-primary { 
-  background-color: #006400 !important; /* NDMC Green */
+  background-color: #006400 !important;
   color: #ffffff !important; 
-  width: 100%; 
-  padding: 14px;
   border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
+}
+
+.btn-danger {
+  background-color: #cc0000 !important;
+  color: #ffffff !important;
+  border: none;
 }
 
 .btn-outline {
-  background: transparent;
-  border: 2px solid #006400; /* NDMC Green */
-  color: #006400;
-  width: 100%; 
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
+  background: #ffffff !important;
+  border: 2px solid #006400 !important;
+  color: #006400 !important;
 }
 
-/* --- INPUT FIELD & FORMS --- */
-.input-field {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #006400; /* Changed from grey (#eee) to NDMC Green */
-  border-radius: 8px;
-  margin-top: 10px;
-  box-sizing: border-box;
-  color: #000000; /* Pure black text when typing */
-  background-color: #ffffff;
+button:active {
+  transform: scale(0.98);
 }
 
-/* Forces the placeholder text to be green instead of default grey */
-.input-field::placeholder {
-  color: #006400; 
-  opacity: 0.7;   
-}
-
+/* --- INPUTS & FORMS --- */
 .manual-form {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  margin-top: 10px;
+  gap: 15px;
 }
+
+.input-field {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid #006400;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 1rem;
+  background-color: #ffffff !important; /* Fix for dark background issue */
+  color: #000000 !important; /* Fix for invisible text issue */
+}
+
+.input-field::placeholder {
+  color: #006400; 
+  opacity: 0.6;   
+}
+
+/* --- SCANNER & QR --- */
 #reader {
   width: 100%;
-  margin-top: 20px;
+  margin-top: 10px;
   border-radius: 12px;
   overflow: hidden;
-  border: 2px solid #006400; /* NDMC Green border for the camera box */
-  background-color: #000000; /* Black background while the camera loads */
-  display: flex;
-  justify-content: center;
+  border: 2px solid #006400;
+  background-color: #000000;
 }
+
 #reader video {
   width: 100% !important;
   border-radius: 10px;
 }
-/* --- ORGANIZER PANEL STYLES --- */
 
-/* 1. Styles the Stop Session button and adds space below it */
-.btn-danger {
-  background-color: #cc0000 !important; /* A clean, professional Red */
-  color: #ffffff !important;
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-bottom: 35px; /* <--- THIS IS THE MAGIC NUMBER THAT ADDS THE SPACE! */
-  margin-top: 10px;
-}
-
-/* 2. Perfectly centers the QR code and the timer text */
 .qr-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  margin-top: 10px;
 }
 
 .status-panel {
   text-align: center;
-  margin-top: 20px; /* Adds a little breathing room below the QR code too */
+  margin-top: 15px;
 }
-/* --- FULLSCREEN PRESENTATION MODE --- */
+
+.token-text {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* --- FULLSCREEN MODE --- */
 .fullscreen-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   background-color: #ffffff;
-  z-index: 9999; /* Forces this to sit on top of the navigation bar and background */
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  padding: 20px;
+  text-align: center;
 }
 
 .fullscreen-title {
-  color: #006400; /* NDMC Green */
+  color: #006400;
   font-size: 3.5rem;
-  margin-bottom: 40px;
-  margin-top: 0;
+  margin-bottom: 20px;
 }
 
 .fullscreen-timer {
   font-size: 2.5rem;
   color: #000000;
-  margin-top: 40px;
-  margin-bottom: 10px;
+  margin: 30px 0;
 }
 
+/* --- CUT-OFF VIEW --- */
+.cutoff-container {
+  background: #fff;
+  padding: 40px;
+  border: 5px solid #cc0000;
+  border-radius: 20px;
+  text-align: center;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* --- EXIT BUTTON --- */
 .btn-close-fullscreen {
-  position: absolute;
-  top: 30px;
-  right: 30px;
-  background-color: #cc0000;
-  color: #ffffff;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #cc0000 !important;
+  color: #ffffff !important;
   border: none;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  z-index: 10001; 
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-close-fullscreen:hover {
-  background-color: #aa0000;
+  background-color: #aa0000 !important;
+  transform: scale(1.05);
+}
+.message-box {
+  background-color: #e0e0e0; /* Adds the light grey background */
+  color: #000000 !important; /* Forces the text to be black */
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 15px;
+  text-align: center;
+  font-weight: bold;
 }

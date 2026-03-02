@@ -66,12 +66,26 @@ export default function StudentDashboard() {
 
   const processScan = (decodedText) => {
     const parts = decodedText.split('|');
-    if (parts.length !== 2) return setMessage("❌ Invalid QR format.");
-    submitAttendance(parts[0]);
+
+    if (parts.length === 2) {
+      const scannedEventId = parts[0];
+      const qrTimestamp = parseInt(parts[1], 10);
+      const currentTime = Date.now();
+
+      const timeDifference = currentTime - qrTimestamp;
+
+      if (timeDifference > 35000) {
+        setMessage("❌ QR Code Expired! Please scan the newest one on the screen.");
+        return; 
+      }
+
+      submitAttendance(scannedEventId);
+    } else {
+      submitAttendance(parts[0]);
+    }
   };
 
   const submitAttendance = async (rawEventId) => {
-    // 1. Clean the ID by removing invisible spaces/newlines
     const cleanEventId = rawEventId.trim(); 
     
     setMessage("⏳ Validating with NDMC Database...");
