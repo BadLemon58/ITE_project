@@ -71,6 +71,8 @@ body {
 .card {
   background: #ffffff;
   width: 100%;
+  max-width: 420px; 
+  min-height: 580px; 
   padding: 40px 30px; 
   border-radius: 16px;
   border: 1px solid #006400; 
@@ -78,8 +80,10 @@ body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
+  justify-content: flex-start; /* Keeps the top elements anchored in place */
   align-items: center; 
   box-sizing: border-box;
+  margin: 0 auto; /* Keeps the card perfectly centered */
 }
 
 .card h2 {
@@ -117,8 +121,9 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px; /* Uniform spacing for all buttons */
+  gap: 12px; 
   margin-bottom: 25px;
+  min-height: 115px;
 }
 
 .btn-primary, .btn-danger, .btn-outline {
@@ -282,12 +287,19 @@ button:active {
   background-color: #aa0000 !important;
   transform: scale(1.05);
 }
+
 .message-box {
-  background-color: #e0e0e0; /* Adds the light grey background */
-  color: #000000 !important; /* Forces the text to be black */
+  background-color: #e0e0e0; 
+  color: #000000 !important; 
   padding: 10px;
   border-radius: 8px;
   margin-top: 15px;
   text-align: center;
   font-weight: bold;
+  min-height: 45px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
