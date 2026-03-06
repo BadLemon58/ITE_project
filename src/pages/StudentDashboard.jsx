@@ -23,7 +23,7 @@ export default function StudentDashboard() {
     const cleanId = studentId.trim();
 
     if (cleanId.length < 8) {
-      setMessage("❌ Invalid ID. It must be at least 8 characters long.");
+      setMessage("Invalid ID. It must be at least 8 characters long.");
       return;
     }
 
@@ -55,9 +55,8 @@ export default function StudentDashboard() {
         );
       }
     } catch (err) {
-      setMessage("📸 Camera blocked. Use Manual Entry.");
+      setMessage("Camera blocked.\nUse Manual Entry.");
       setIsScanning(false);
-      setShowManual(true);
     }
   };
 
@@ -69,9 +68,9 @@ export default function StudentDashboard() {
 
     if (previouslyScannedId) {
       if (previouslyScannedId === studentId) {
-        setMessage("❌ You have already recorded your attendance for this event!");
+        setMessage("You have already recorded \nyour attendance for this event!");
       } else {
-        setMessage("❌ This device has already been used by another student.");
+        setMessage("This device has already been used by another student.");
       }
       return; 
     }
@@ -81,7 +80,7 @@ export default function StudentDashboard() {
       const currentTime = Date.now();
       
       if ((currentTime - qrTimestamp) > 35000) {
-        setMessage("❌ QR Code Expired! Please scan the newest one on the screen.");
+        setMessage("QR Code Expired! \nPlease scan the newest one on the screen.");
         return; 
       }
     }
@@ -98,9 +97,9 @@ export default function StudentDashboard() {
 
     if (previouslyScannedId) {
       if (previouslyScannedId === studentId) {
-        setMessage("❌ You have already recorded your attendance for this event!");
+        setMessage("You have already recorded \nyour attendance for this event!");
       } else {
-        setMessage("❌ This device has already been used by another student.");
+        setMessage("This device has already been\n used by another student.");
       }
       return;
     }
@@ -112,7 +111,7 @@ export default function StudentDashboard() {
   const submitAttendance = async (rawEventId) => {
     const cleanEventId = rawEventId.trim().toUpperCase(); 
     
-    setMessage("⏳ Validating...");
+    setMessage("Validating...");
     
     const { error } = await supabase
       .from('attendance')
@@ -120,14 +119,14 @@ export default function StudentDashboard() {
 
     if (error) {
       if (error.code === '23503') {
-        setMessage(`❌ Error: Event "${cleanEventId}" or Student "${studentId}" is missing.`);
+        setMessage(`Event "${cleanEventId}" is not found.`);
       } else if (error.code === '23505') {
-        setMessage("⚠️ You have already scanned for this event.");
+        setMessage("You have already scanned for this event.");
       } else {
-        setMessage(`❌ Error: ${error.message}`);
+        setMessage(`Error: ${error.message}`);
       }
     } else {
-      setMessage(`✅ Success! Attendance logged for ${cleanEventId}.`);
+      setMessage(`Success! Attendance logged for ${cleanEventId}.`);
     }
   };
 
@@ -152,31 +151,32 @@ export default function StudentDashboard() {
     );
   }
 
-  return (
-    <div className="card student-card">
-      <div className="user-bar">
-        <span>ID: {studentId}</span>
-        <button onClick={handleLogout} className="logout-btn">Change ID</button>
-      </div>
-      <h2>Student Portal</h2>
-      {!isScanning && (
-        <div className="action-buttons">
-          <button className="btn btn-primary" onClick={startScanner}>Open QR Scanner</button>
-          <button className="btn btn-outline" onClick={() => setShowManual(!showManual)}>
-            {showManual ? "Hide Manual" : "Manual Entry"}
-          </button>
-        </div>
-      )}
-      {showManual && !isScanning && (
-        <div className="manual-form">
-          <input type="text" placeholder="Event ID (e.g. EVT-101)" 
-            value={manualId} onChange={(e) => setManualId(e.target.value.toUpperCase())}
-            className="input-field" />
-          <button className="btn btn-primary" onClick={handleManualSubmit}>Submit</button>
-        </div>
-      )}
-      <div id="reader"></div>
-      {message && <div className="message-box">{message}</div>}
+ return (
+  <div className="card student-card">
+    <div className="user-bar">
+      <span>ID: {studentId}</span>
+      <button onClick={handleLogout} className="logout-btn">Change ID</button>
     </div>
-  );
+    <h2>Student Portal</h2>
+
+    {!isScanning && (
+      <div className="action-buttons">
+        <button className="btn btn-primary" onClick={startScanner}>Open QR Scanner</button>
+        <button className="btn btn-outline" onClick={() => setShowManual(!showManual)}>
+          {showManual ? "Hide Manual" : "Manual Entry"}
+        </button>
+      </div>
+    )}
+    {showManual && !isScanning && (
+      <div className="manual-form">
+        <input type="text" placeholder="Event ID"
+          value={manualId} onChange={(e) => setManualId(e.target.value.toUpperCase())}
+          className="input-field" />
+        <button className="btn btn-primary" onClick={handleManualSubmit}>Submit</button>
+      </div>
+    )}
+    <div id="reader"></div>
+    {message && <div className="message-box">{message}</div>}
+  </div>
+);
 }

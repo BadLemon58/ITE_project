@@ -10,9 +10,9 @@ function App() {
    
 <div className="qsams-container">
   <nav className="top-nav">
-  <img src={ndmcLogo} alt="NDMC Seal" className="school-seal-img" />
+  <img src="/vite.png" alt="School Seal" className="school-seal-img" />
   
-  <h1 className="logo">QSAMS</h1>
+  
   <p className="school-title">Notre Dame of Midsayap College</p>
   
   <div className="nav-links">
