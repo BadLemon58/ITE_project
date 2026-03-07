@@ -39,27 +39,25 @@ export default function StudentDashboard() {
   };
 
   const startScanner = async () => {
-    setIsScanning(true);
-    setMessage('');
-    const html5QrCode = new Html5Qrcode("reader");
-    scannerRef.current = html5QrCode;
-    try {
-      const devices = await Html5Qrcode.getCameras();
-      if (devices && devices.length > 0) {
-        const cameraId = devices[devices.length - 1].id;
-        await html5QrCode.start(cameraId, { fps: 10, qrbox: 250 },
-          async (decodedText) => {
-            await html5QrCode.stop();
-            setIsScanning(false);
-            processScan(decodedText);
-          }
-        );
+  setIsScanning(true);
+  setMessage('');
+  const html5QrCode = new Html5Qrcode("reader");
+  scannerRef.current = html5QrCode;
+  try {
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      async (decodedText) => {
+        await html5QrCode.stop();
+        setIsScanning(false);
+        processScan(decodedText);
       }
-    } catch (err) {
-      setMessage("Camera blocked.\nUse Manual Entry.");
-      setIsScanning(false);
-    }
-  };
+    );
+  } catch (err) {
+    setMessage("Camera blocked.\nUse Manual Entry.");
+    setIsScanning(false);
+  }
+};
 
  const cancelScanner = async () => {
   try {
@@ -197,7 +195,15 @@ export default function StudentDashboard() {
       )}
       <div id="reader"></div>
       {isScanning && (
-        <button className="btn btn-danger" onClick={cancelScanner} style={{ marginTop: '10px' }}>
+        <button 
+          className="btn btn-danger" 
+          onClick={cancelScanner} 
+          style={{ 
+            position: 'sticky', 
+            bottom: '10px', 
+            marginTop: '10px',
+            zIndex: 100
+          }}>
           Cancel
         </button>
       )}
