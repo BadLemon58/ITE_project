@@ -164,7 +164,11 @@ export default function OrganizerDashboard() {
           {/* Right: Buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
             <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
-            <button className="btn btn-danger" onClick={() => setIsActive(false)}>Stop Session</button>
+            <button className="btn btn-danger" onClick={() => {
+                if (window.confirm("Are you sure you want to stop the session?")) {
+                  setIsActive(false);
+                }
+              }}>Stop Session</button>
             <button className="btn btn-outline" onClick={exportToCSV}>📊 Export CSV</button>
           </div>
 

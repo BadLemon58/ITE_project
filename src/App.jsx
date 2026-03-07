@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import OrganizerDashboard from './pages/OrganizerDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import './App.css';
@@ -16,9 +16,9 @@ function App() {
   <p className="school-title">Quick Student Attendance Monitoring System</p>
   
   <div className="nav-links">
-    <Link to="/">Student Scan</Link>
-    <Link to="/organizer">Organizer Panel</Link>
-  </div>
+  <NavLink to="/" end>Student Scan</NavLink>
+  <NavLink to="/organizer">Organizer Panel</NavLink>
+</div>
 </nav>
         <main className="content">
           <Routes>
