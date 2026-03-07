@@ -46,7 +46,7 @@ export default function StudentDashboard() {
   try {
     await html5QrCode.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
+       { fps: 10, qrbox: { width: 200, height: 200 } },
       async (decodedText) => {
         await html5QrCode.stop();
         setIsScanning(false);

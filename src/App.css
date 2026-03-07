@@ -99,6 +99,7 @@ body {
   height: auto;
   min-height: unset;
   padding: 20px;
+  overflow: visible;
 }
 
 .organizer-card {
@@ -222,6 +223,7 @@ button:active {
   border-radius: 12px;
   overflow: hidden;
   background-color: #000000;
+  aspect-ratio: 1;
 }
 
 #reader:empty {
