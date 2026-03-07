@@ -223,8 +223,7 @@ button:active {
   border-radius: 12px;
   overflow: hidden;
   background-color: #000000;
-  aspect-ratio: 1;
-  max-height: 300px;
+  max-height: 280px;
 }
 
 #reader:empty {

@@ -201,8 +201,7 @@ export default function StudentDashboard() {
       </>
     )}
 
-    {/* always in DOM */}
-    <div id="reader" style={{ display: isScanning ? 'block' : 'none', width: '100%' }}></div>
+   <div id="reader" style={{ display: isScanning ? 'block' : 'none' }}></div>
     
     {isScanning && (
       <button className="btn btn-danger" onClick={cancelScanner} style={{ marginTop: '10px' }}>
