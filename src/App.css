@@ -8,6 +8,7 @@ body {
   align-items: flex-start; 
   min-height: 100vh;
   padding: 40px 20px;
+  overflow: hidden;
 }
 
 .qsams-container {
@@ -84,7 +85,7 @@ body {
   align-items: center; 
   box-sizing: border-box;
   margin: 0 auto; 
-  overflow: hidden;
+  overflow: visible;
 }
 
 .student-card {
@@ -94,6 +95,18 @@ body {
   height: auto;       
 }
 
+.organizer-card {
+  width: 420px;
+  max-width: 95vw;
+  min-height: 320px;
+  height: auto;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.organizer-card h2 {
+  margin: 0 0 15px 0; 
+}
 .card h2 {
   color: #006400 !important;
   margin: 0 0 25px 0;

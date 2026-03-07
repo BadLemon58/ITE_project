@@ -13,7 +13,7 @@ function App() {
   <img src="/vite.png" alt="School Seal" className="school-seal-img" />
   
   
-  <p className="school-title">Notre Dame of Midsayap College</p>
+  <p className="school-title">Quick Student Attendance Monitoring System</p>
   
   <div className="nav-links">
     <Link to="/">Student Scan</Link>

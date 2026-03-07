@@ -102,7 +102,7 @@ export default function OrganizerDashboard() {
     link.click();
   };
 
-  // --- FULLSCREEN VIEW (EXPORT REMOVED HERE) ---
+  // --- FULLSCREEN VIEW ---
   if (isFullscreen && isActive) {
     return (
       <div className="fullscreen-overlay">
@@ -144,25 +144,32 @@ export default function OrganizerDashboard() {
         </div>
       ) : (
         <>
-         <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '6px 12px', borderRadius: '6px', display: 'inline-block' }}>
-              Active Event: <strong>{eventId.trim()}</strong>
+          <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 10px', borderRadius: '6px', display: 'inline-block', margin: '0 0 5px 0' }}>
+            Active Event: <strong>{eventId.trim()}</strong>
           </p>
-          <p style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '20px' }}>
+          <p style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '1.1rem', margin: '0 0 10px 0' }}>
             Time Left: {formatTime(sessionTimeLeft)}
           </p>
           
-          <div className="action-buttons">
+         <div style={{ display: 'flex', flexDirection: 'row', gap: '15px', alignItems: 'center', width: '100%' }}>
+  
+          {/* Left: QR Code */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
+            <QRCodeSVG value={secureToken} size={160} level="H" />
+            <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 8px', borderRadius: '6px', marginTop: '10px', fontSize: '0.85rem' }}>
+              Next update: <strong>{timeLeft}s</strong>
+            </p>
+          </div>
+
+          {/* Right: Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
             <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
             <button className="btn btn-danger" onClick={() => setIsActive(false)}>Stop Session</button>
             <button className="btn btn-outline" onClick={exportToCSV}>📊 Export CSV</button>
           </div>
 
-          <div className="qr-container">
-            <QRCodeSVG value={secureToken} size={250} level="H" />
-           <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '6px 12px', borderRadius: '6px', display: 'inline-block', marginTop: '15px' }}>
-            Next update: <strong>{timeLeft}s</strong>
-          </p>
-          </div>
+        </div>
+
         </>
       )}
     </div>
