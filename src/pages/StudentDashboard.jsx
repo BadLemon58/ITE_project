@@ -46,7 +46,7 @@ export default function StudentDashboard() {
   try {
     await html5QrCode.start(
       { facingMode: "environment" },
-       { fps: 10, qrbox: { width: 200, height: 200 } },
+      { fps: 10, qrbox: { width: 500, height: 500 } },
       async (decodedText) => {
         await html5QrCode.stop();
         setIsScanning(false);
@@ -204,9 +204,9 @@ export default function StudentDashboard() {
    <div id="reader" style={{ display: isScanning ? 'block' : 'none' }}></div>
     
     {isScanning && (
-      <button className="btn btn-danger" onClick={cancelScanner} style={{ marginTop: '10px' }}>
-        Cancel
-      </button>
+     <button className="btn btn-danger" onClick={cancelScanner} style={{ marginTop: '10px', width: '100%' }}>
+  Cancel
+</button>
     )}
   </div>
 );

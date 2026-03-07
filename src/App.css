@@ -98,7 +98,7 @@ body {
   max-width: 95vw;
   height: auto;
   min-height: unset;
-  padding: 20px;
+  padding-bottom: 20px;
   overflow: visible;
 }
 
@@ -219,11 +219,17 @@ button:active {
 /* --- SCANNER & QR --- */
 #reader {
   width: 100%;
-  margin-top: 10px;
-  border-radius: 12px;
+  max-height: 200px;
   overflow: hidden;
+  border-radius: 12px;
   background-color: #000000;
-  max-height: 280px;
+}
+
+#reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: 10px;
 }
 
 #reader:empty {
@@ -232,11 +238,6 @@ button:active {
 
 #reader:not(:empty) {
   border: 2px solid #006400;
-}
-
-#reader video {
-  width: 100% !important;
-  border-radius: 10px;
 }
 
 .qr-container {
