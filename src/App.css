@@ -90,9 +90,10 @@ body {
 
 .student-card {
   width: 380px;
-  max-width: 380px;
-  min-height: 320px;
-  height: auto;       
+  max-width: 95vw;
+  height: auto;
+  min-height: unset;
+  padding: 20px;
 }
 
 .organizer-card {
