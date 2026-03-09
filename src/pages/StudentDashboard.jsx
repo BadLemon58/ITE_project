@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../supabaseClient';
+import { logEvent } from '../lib/logEvent';
 
 export default function StudentDashboard() {
   const [studentId, setStudentId] = useState('');
@@ -64,6 +65,9 @@ export default function StudentDashboard() {
   } catch (err) {
     setMessage("Camera blocked.\nUse Manual Entry.");
     setIsScanning(false);
+    logEvent('scanner_error', 'Camera blocked when starting scanner', {
+      error_message: err?.message ?? null,
+    });
   }
 };
 
@@ -144,10 +148,20 @@ export default function StudentDashboard() {
       } else {
         setMessage(`Error: ${error.message}`);
       }
+      logEvent('attendance_error', 'Attendance insert failed', {
+        event_id: cleanEventId,
+        student_id: studentId,
+        error_message: error.message,
+        error_code: error.code,
+      });
     } else {
-  setMessage(`Success! Attendance logged for ${cleanEventId}.`);
-  setTimeout(() => setMessage(''), 4000); // clears after 4 seconds
-  }
+      setMessage(`Success! Attendance logged for ${cleanEventId}.`);
+      logEvent('attendance_success', 'Attendance logged', {
+        event_id: cleanEventId,
+        student_id: studentId,
+      });
+      setTimeout(() => setMessage(''), 4000); // clears after 4 seconds
+    }
   };
 
 
@@ -169,9 +183,20 @@ export default function StudentDashboard() {
           <button onClick={handleRegister} className="btn btn-primary">Save ID</button>
         </div>
         {isLoading ? (
-          <div className="message-box"><span className="spinner" /> Validating...</div>
+          <div className="message-box" role="status" aria-live="polite">
+            <span className="spinner" /> Validating...
+          </div>
         ) : (
-          message && <div className="message-box" style={{ color: 'red', background: '#ffe6e6' }}>{message}</div>
+          message && (
+            <div
+              className="message-box"
+              role="alert"
+              aria-live="assertive"
+              style={{ color: 'red', background: '#ffe6e6' }}
+            >
+              {message}
+            </div>
+          )
         )}
       </div>
     );
@@ -226,10 +251,12 @@ export default function StudentDashboard() {
             </div>
           )}
           {isLoading ? (
-            <div className="message-box"><span className="spinner" /> Validating...</div>
+            <div className="message-box" role="status" aria-live="polite">
+              <span className="spinner" /> Validating...
+            </div>
           ) : (
             message && (
-              <div className="message-box">
+              <div className="message-box" role="status" aria-live="polite">
                 {renderMessageWithLineBreaks(message)}
               </div>
             )
@@ -259,7 +286,12 @@ export default function StudentDashboard() {
             Cancel
           </button>
           {message && (
-            <div className="message-box" style={{ marginTop: '10px' }}>
+            <div
+              className="message-box"
+              style={{ marginTop: '10px' }}
+              role="status"
+              aria-live="polite"
+            >
               {renderMessageWithLineBreaks(message)}
             </div>
           )}

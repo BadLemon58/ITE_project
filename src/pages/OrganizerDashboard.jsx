@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../supabaseClient';
+import { logEvent } from '../lib/logEvent';
 
 export default function OrganizerDashboard() {
   const [isActive, setIsActive] = useState(false);
@@ -19,6 +20,10 @@ export default function OrganizerDashboard() {
     error: null,
   });
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [organizerMessage, setOrganizerMessage] = useState('');
+  const [organizerMessageType, setOrganizerMessageType] = useState('info'); // 'info' | 'error' | 'success'
+  const [isStartingSession, setIsStartingSession] = useState(false);
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
 
   const clearOrganizerSessionStorage = () => {
     if (typeof window === 'undefined') return;
@@ -112,31 +117,48 @@ export default function OrganizerDashboard() {
   }, [isActive, eventId]);
 
   const handleStartSession = async () => {
+    if (isStartingSession) return;
     const cleanEventId = eventId.trim();
     if (cleanEventId.length === 0) {
-      alert("⚠️ Please enter an Event ID before starting.");
+      setOrganizerMessageType('error');
+      setOrganizerMessage('Please enter an Event ID before starting.');
       return;
     }
     const duration = parseInt(durationInput, 10);
     if (isNaN(duration) || duration <= 0) {
-      alert("⚠️ Please enter a valid duration in minutes.");
+      setOrganizerMessageType('error');
+      setOrganizerMessage('Please enter a valid duration in minutes.');
       return;
     }
+
+    setIsStartingSession(true);
+    setOrganizerMessage('');
+
+    const startedAt = Date.now();
+    const endTimeIso = new Date(startedAt + duration * 60000).toISOString();
 
     const { error } = await supabase
       .from('events')
       .upsert({ 
           event_id: cleanEventId, 
           event_name: `Session: ${cleanEventId}`, 
-          event_date: new Date().toISOString().split('T')[0] 
+          event_date: new Date().toISOString().split('T')[0],
+          end_time: endTimeIso,
         }, { onConflict: 'event_id' });
 
+    setIsStartingSession(false);
+
     if (error) {
-      alert("❌ Database Error: " + error.message);
+      setOrganizerMessageType('error');
+      setOrganizerMessage('Database error while saving the event. Please try again.');
+      logEvent('session_start_error', 'Database error while saving event', {
+        event_id: cleanEventId,
+        duration_minutes: duration,
+        error_message: error.message,
+        error_code: error.code,
+      });
       return;
     }
-
-    const startedAt = Date.now();
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('qsams_organizer_event_id', cleanEventId);
@@ -148,6 +170,13 @@ export default function OrganizerDashboard() {
     setSessionDurationMinutes(duration);
     setSessionTimeLeft(duration * 60);
     setIsActive(true);
+    setOrganizerMessageType('success');
+    setOrganizerMessage(`Session started for event "${cleanEventId}".`);
+    logEvent('session_start', 'Session started', {
+      event_id: cleanEventId,
+      duration_minutes: duration,
+      end_time: endTimeIso,
+    });
   };
 
   const extendSession = (extraMinutes) => {
@@ -220,13 +249,35 @@ export default function OrganizerDashboard() {
   };
   
   const exportToCSV = async () => {
+    if (isExportingCsv || !eventId.trim()) return;
+    setIsExportingCsv(true);
+    setOrganizerMessage('');
+
     const { data, error } = await supabase
       .from('attendance')
       .select('student_id, created_at')
       .eq('event_id', eventId.trim());
 
-    if (error) return alert("Error fetching data: " + error.message);
-    if (data.length === 0) return alert("No records found.");
+    if (error) {
+      setIsExportingCsv(false);
+      setOrganizerMessageType('error');
+      setOrganizerMessage('Unable to export CSV right now. Please try again.');
+      logEvent('export_csv_error', 'Failed to export CSV', {
+        event_id: eventId.trim(),
+        error_message: error.message,
+        error_code: error.code,
+      });
+      return;
+    }
+    if (data.length === 0) {
+      setIsExportingCsv(false);
+      setOrganizerMessageType('info');
+      setOrganizerMessage('No attendance records found for this event yet.');
+      logEvent('export_csv_empty', 'No attendance records to export', {
+        event_id: eventId.trim(),
+      });
+      return;
+    }
 
     let csvContent = "Student ID,Scan Time\n";
     data.forEach(row => {
@@ -240,6 +291,14 @@ export default function OrganizerDashboard() {
     link.setAttribute("href", url);
     link.setAttribute("download", `Attendance_${eventId}.csv`);
     link.click();
+
+    setIsExportingCsv(false);
+    setOrganizerMessageType('success');
+    setOrganizerMessage('CSV downloaded successfully.');
+    logEvent('export_csv_success', 'CSV downloaded', {
+      event_id: eventId.trim(),
+      record_count: data.length,
+    });
   };
 
   // --- FULLSCREEN VIEW ---
@@ -375,13 +434,44 @@ export default function OrganizerDashboard() {
   return (
     <div className="card organizer-card">
       <h2>Organizer Panel</h2>
+
+      {organizerMessage && (
+        <div
+          className="message-box"
+          role="status"
+          aria-live={organizerMessageType === 'error' ? 'assertive' : 'polite'}
+          style={{
+            marginBottom: '10px',
+            backgroundColor:
+              organizerMessageType === 'error'
+                ? '#ffe6e6'
+                : organizerMessageType === 'success'
+                ? '#e6ffed'
+                : '#e0e0e0',
+            color:
+              organizerMessageType === 'error'
+                ? '#990000'
+                : organizerMessageType === 'success'
+                ? '#004d26'
+                : '#000000',
+          }}
+        >
+          {organizerMessage}
+        </div>
+      )}
       {!isActive ? (
         <div className="manual-form">
           <input type="text" placeholder="Event ID" className="input-field" 
             value={eventId} onChange={(e) => setEventId(e.target.value.toUpperCase())} />
           <input type="number" placeholder="Duration (minutes)" className="input-field" 
             value={durationInput} onChange={(e) => setDurationInput(e.target.value)} />
-          <button className="btn btn-primary" onClick={handleStartSession}>Start Secure Session</button>
+          <button
+            className="btn btn-primary"
+            onClick={handleStartSession}
+            disabled={isStartingSession}
+          >
+            {isStartingSession ? 'Starting...' : 'Start Secure Session'}
+          </button>
         </div>
       ) : (
         <>
@@ -494,6 +584,7 @@ export default function OrganizerDashboard() {
             </div>
             <button className="btn btn-danger" onClick={() => {
                 if (window.confirm("Are you sure you want to stop the session?")) {
+                  const currentEventId = eventId.trim();
                   clearOrganizerSessionStorage();
                   setIsActive(false);
                   setSessionTimeLeft(0);
@@ -504,9 +595,20 @@ export default function OrganizerDashboard() {
                     recent: [],
                     error: null,
                   });
+                  setOrganizerMessageType('info');
+                  setOrganizerMessage('Session stopped.');
+                  logEvent('session_stop', 'Session stopped by organizer', {
+                    event_id: currentEventId,
+                  });
                 }
               }}>Stop Session</button>
-            <button className="btn btn-outline" onClick={exportToCSV}>📊 Export CSV</button>
+            <button
+              className="btn btn-outline"
+              onClick={exportToCSV}
+              disabled={isExportingCsv}
+            >
+              {isExportingCsv ? 'Exporting…' : '📊 Export CSV'}
+            </button>
           </div>
 
           {/* Attendance overview */}
