@@ -466,7 +466,9 @@ export default function OrganizerDashboard() {
                 >
                   Session Ends In: {formatTime(sessionTimeLeft)}
                 </h2>
-                <QRCodeSVG value={secureToken} size={260} level="H" />
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '0 auto', textAlign: 'center' }}>
+                  <QRCodeSVG value={secureToken} size={260} level="H" />
+                </div>
                 <p
                   className="fullscreen-timer"
                   style={{ fontSize: '0.95rem', margin: 0 }}
@@ -522,7 +524,9 @@ export default function OrganizerDashboard() {
             >
               Session Ends In: {formatTime(sessionTimeLeft)}
             </h2>
-            <QRCodeSVG value={secureToken} size={450} level="H" />
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', margin: '0 auto', textAlign: 'center' }}>
+              <QRCodeSVG value={secureToken} size={450} level="H" />
+            </div>
             <p className="fullscreen-timer">
               Next QR update in: <strong>{timeLeft}s</strong>
             </p>
