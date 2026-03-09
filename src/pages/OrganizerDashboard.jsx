@@ -24,6 +24,9 @@ export default function OrganizerDashboard() {
   const [organizerMessageType, setOrganizerMessageType] = useState('info'); // 'info' | 'error' | 'success'
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [pastEvents, setPastEvents] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const clearOrganizerSessionStorage = () => {
     if (typeof window === 'undefined') return;
@@ -199,6 +202,8 @@ export default function OrganizerDashboard() {
     setSessionTimeLeft((prev) => prev + extraMinutes * 60);
   };
 
+  const [liveAttendance, setLiveAttendance] = useState([]);
+
   // Live attendance stats for active event
   useEffect(() => {
     if (!isActive || !eventId) return;
@@ -213,7 +218,7 @@ export default function OrganizerDashboard() {
         .select('student_id, created_at', { count: 'exact' })
         .eq('event_id', cleanId)
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(50); // Get more for live feed
 
       if (cancelled) return;
 
@@ -225,20 +230,45 @@ export default function OrganizerDashboard() {
       } else {
         setAttendanceStats({
           total: typeof count === 'number' ? count : (data ? data.length : 0),
-          recent: data || [],
+          recent: data ? data.slice(0, 3) : [], // Keep only 3 for stats
           error: null,
         });
+        setLiveAttendance(data || []); // Store all for live feed
       }
 
       setIsLoadingStats(false);
     };
 
     fetchStats();
-    const intervalId = setInterval(fetchStats, 10000);
+
+    // Set up real-time subscription for live updates
+    const channel = supabase
+      .channel(`attendance_${eventId.trim()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'attendance',
+          filter: `event_id=eq.${eventId.trim()}`,
+        },
+        (payload) => {
+          if (cancelled) return;
+          
+          const newAttendance = payload.new;
+          setLiveAttendance(prev => [newAttendance, ...prev]);
+          setAttendanceStats(prev => ({
+            ...prev,
+            total: prev.total + 1,
+            recent: [newAttendance, ...prev.recent.slice(0, 2)], // Keep only 3 recent
+          }));
+        }
+      )
+      .subscribe();
 
     return () => {
       cancelled = true;
-      clearInterval(intervalId);
+      supabase.removeChannel(channel);
     };
   }, [isActive, eventId]);
 
@@ -299,6 +329,92 @@ export default function OrganizerDashboard() {
       event_id: eventId.trim(),
       record_count: data.length,
     });
+  };
+
+  const loadPastEvents = async () => {
+    if (isLoadingHistory) return;
+    setIsLoadingHistory(true);
+    setOrganizerMessage('');
+
+    try {
+      // Get all events with their attendance counts
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('events')
+        .select('event_id, event_name, event_date, end_time')
+        .order('event_date', { ascending: false })
+        .limit(20);
+
+      if (eventsError) throw eventsError;
+
+      // For each event, get attendance count
+      const eventsWithCounts = await Promise.all(
+        eventsData.map(async (event) => {
+          const { count, error: countError } = await supabase
+            .from('attendance')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', event.event_id);
+
+          if (countError) {
+            console.warn('Error getting count for event', event.event_id, countError);
+            return { ...event, attendanceCount: 0 };
+          }
+
+          return { ...event, attendanceCount: count || 0 };
+        })
+      );
+
+      setPastEvents(eventsWithCounts);
+      setShowHistory(true);
+    } catch (error) {
+      setOrganizerMessageType('error');
+      setOrganizerMessage('Failed to load past events. Please try again.');
+      logEvent('load_history_error', 'Failed to load past events', {
+        error_message: error.message,
+      });
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const exportEventCSV = async (eventId) => {
+    setIsExportingCsv(true);
+    setOrganizerMessage('');
+
+    const { data, error } = await supabase
+      .from('attendance')
+      .select('student_id, created_at')
+      .eq('event_id', eventId);
+
+    if (error) {
+      setIsExportingCsv(false);
+      setOrganizerMessageType('error');
+      setOrganizerMessage('Unable to export CSV for this event.');
+      return;
+    }
+
+    if (data.length === 0) {
+      setIsExportingCsv(false);
+      setOrganizerMessageType('info');
+      setOrganizerMessage('No attendance records found for this event.');
+      return;
+    }
+
+    let csvContent = "Student ID,Scan Time\n";
+    data.forEach(row => {
+      const time = new Date(row.created_at).toLocaleString();
+      csvContent += `${row.student_id},"${time}"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Attendance_${eventId}.csv`);
+    link.click();
+
+    setIsExportingCsv(false);
+    setOrganizerMessageType('success');
+    setOrganizerMessage(`CSV exported for event "${eventId}".`);
   };
 
   // --- FULLSCREEN VIEW ---
@@ -665,8 +781,94 @@ export default function OrganizerDashboard() {
 
         </div>
 
+        
         </>
       )}
+
+      {/* Past Events History */}
+      <div style={{ marginTop: '30px', borderTop: '1px solid #ddd', paddingTop: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#333' }}>📚 Past Events History</h3>
+          {!showHistory ? (
+            <button
+              className="btn btn-outline"
+              onClick={loadPastEvents}
+              disabled={isLoadingHistory}
+              style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+            >
+              {isLoadingHistory ? 'Loading...' : 'View History'}
+            </button>
+          ) : (
+            <button
+              className="btn btn-outline"
+              onClick={() => setShowHistory(false)}
+              style={{ fontSize: '0.85rem', padding: '6px 12px' }}
+            >
+              ✕ Hide History
+            </button>
+          )}
+        </div>
+
+        {showHistory && (
+          <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '8px' }}>
+            {pastEvents.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                No past events found.
+              </div>
+            ) : (
+              <div style={{ padding: '10px' }}>
+                {pastEvents.map((event, idx) => (
+                  <div
+                    key={event.event_id}
+                    style={{
+                      padding: '12px',
+                      marginBottom: '8px',
+                      backgroundColor: '#fafafa',
+                      borderRadius: '6px',
+                      border: '1px solid #eee',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '4px' }}>
+                        {event.event_id}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                        {event.event_name && event.event_name !== `Session: ${event.event_id}` 
+                          ? event.event_name 
+                          : `Session: ${event.event_id}`}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                        {new Date(event.event_date).toLocaleDateString()} • 
+                        {event.end_time ? new Date(event.end_time).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'No end time'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#007bff', marginBottom: '4px' }}>
+                        {event.attendanceCount} attendees
+                      </div>
+                      <button
+                        className="btn btn-outline"
+                        onClick={() => exportEventCSV(event.event_id)}
+                        disabled={isExportingCsv}
+                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                      >
+                        📊 Export CSV
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

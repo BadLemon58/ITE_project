@@ -11,14 +11,101 @@ export default function StudentDashboard() {
   const [manualId, setManualId] = useState('');
   const [showManual, setShowManual] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [scanHistory, setScanHistory] = useState([]);
+  const [showFullHistory, setShowFullHistory] = useState(false);
+  const [fullHistory, setFullHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const scannerRef = useRef(null);
   const manualInputRef = useRef(null);
+
+  // Helper to play a success sound and vibrate
+  const triggerSuccessFeedback = () => {
+    // 1. Vibration (for mobile)
+    if ("vibrate" in navigator) {
+      navigator.vibrate([100, 50, 100]); // Short double pulse
+    }
+
+    // 2. Success Beep (Web Audio API)
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1); // Drop to A4
+
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.2);
+    } catch (e) {
+      console.warn("Audio feedback failed", e);
+    }
+  };
+
+  // Helper to add scan to history
+  const addToScanHistory = (eventId) => {
+    const newScan = {
+      eventId,
+      timestamp: Date.now(),
+      date: new Date().toLocaleString()
+    };
+
+    setScanHistory(prev => {
+      const updated = [newScan, ...prev].slice(0, 10); // Keep only last 10
+      localStorage.setItem('qsams_scan_history', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Load full attendance history from database
+  const loadFullHistory = async () => {
+    if (isLoadingHistory) return;
+    setIsLoadingHistory(true);
+    setMessage('');
+
+    try {
+      const { data, error } = await supabase
+        .from('attendance')
+        .select('event_id, created_at')
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setFullHistory(data || []);
+      setShowFullHistory(true);
+    } catch (error) {
+      setMessage('Failed to load attendance history. Please try again.');
+      logEvent('load_student_history_error', 'Failed to load student attendance history', {
+        student_id: studentId,
+        error_message: error.message,
+      });
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   useEffect(() => {
     const savedId = localStorage.getItem('qsams_student_id');
     if (savedId) {
       setStudentId(savedId);
       setIsRegistered(true);
+    }
+
+    // Load scan history
+    const savedHistory = localStorage.getItem('qsams_scan_history');
+    if (savedHistory) {
+      try {
+        setScanHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.warn('Failed to parse scan history:', e);
+      }
     }
   }, []);
 
@@ -28,6 +115,70 @@ export default function StudentDashboard() {
       manualInputRef.current.focus();
     }
   }, [showManual]);
+
+  // Handle scanner start/stop based on isScanning state
+  useEffect(() => {
+    let html5QrCode = null;
+
+    if (isScanning) {
+      const startCamera = async () => {
+        try {
+         
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          const element = document.getElementById("reader");
+          if (!element) {
+            console.error("Scanner element not found");
+            return;
+          }
+
+          html5QrCode = new Html5Qrcode("reader");
+          scannerRef.current = html5QrCode;
+          
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            { 
+              fps: 10, 
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0
+            },
+            async (decodedText) => {
+             
+              if (scannerRef.current) {
+                try {
+                  await scannerRef.current.stop();
+                } catch (e) {
+                  console.warn("Stop failed", e);
+                }
+                scannerRef.current = null;
+              }
+              setIsScanning(false);
+              processScan(decodedText);
+            }
+          ).catch(err => {
+            throw err; // Re-throw to be caught by outer try-catch
+          });
+        } catch (err) {
+          console.error("Scanner error:", err);
+          setMessage("Camera blocked or failed.\nUse Manual Entry.");
+          setIsScanning(false);
+          logEvent('scanner_error', 'Camera blocked or failed to start', {
+            error_message: err?.message ?? null,
+          });
+        }
+      };
+
+      startCamera();
+    }
+
+    return () => {
+      // Cleanup: stop the scanner if the component unmounts or isScanning becomes false
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+  }, [isScanning]);
 
   const handleRegister = (e) => {
     e.preventDefault();
@@ -47,40 +198,13 @@ export default function StudentDashboard() {
     setStudentId('');
   };
 
-  const startScanner = async () => {
-  setIsScanning(true);
-  setMessage('');
-  const html5QrCode = new Html5Qrcode("reader");
-  scannerRef.current = html5QrCode;
-  try {
-    await html5QrCode.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 500, height: 500 } },
-      async (decodedText) => {
-        await html5QrCode.stop();
-        setIsScanning(false);
-        processScan(decodedText);
-      }
-    );
-  } catch (err) {
-    setMessage("Camera blocked.\nUse Manual Entry.");
-    setIsScanning(false);
-    logEvent('scanner_error', 'Camera blocked when starting scanner', {
-      error_message: err?.message ?? null,
-    });
-  }
-};
+  const startScanner = () => {
+    setIsScanning(true);
+    setMessage('');
+  };
 
- const cancelScanner = async () => {
-  try {
-    if (scannerRef.current) {
-      await scannerRef.current.stop();
-      scannerRef.current = null;
-    }
-  } catch (err) {
-    // ignore stop errors
-  }
-  setIsScanning(false);
+  const cancelScanner = () => {
+    setIsScanning(false);
   };
 
   const processScan = (decodedText) => {
@@ -155,6 +279,8 @@ export default function StudentDashboard() {
         error_code: error.code,
       });
     } else {
+      triggerSuccessFeedback();
+      addToScanHistory(cleanEventId);
       setMessage(`Success! Attendance logged for ${cleanEventId}.`);
       logEvent('attendance_success', 'Attendance logged', {
         event_id: cleanEventId,
@@ -250,6 +376,66 @@ export default function StudentDashboard() {
               </p>
             </div>
           )}
+
+
+          {/* Full Attendance History */}
+          {showFullHistory && (
+            <div className="full-history" style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ fontSize: '1.1rem', margin: 0, color: '#333' }}>📚 Complete Attendance History</h3>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => setShowFullHistory(false)}
+                  style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+                >
+                  ✕ Close
+                </button>
+              </div>
+              <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}>
+                {fullHistory.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+                    No attendance records found.
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '10px' }}>
+                      Total events attended: <strong>{fullHistory.length}</strong>
+                    </div>
+                    {fullHistory.map((record, index) => (
+                      <div key={index} style={{ 
+                        padding: '10px', 
+                        marginBottom: '8px',
+                        backgroundColor: '#fafafa',
+                        borderRadius: '6px',
+                        border: '1px solid #eee',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>{record.event_id}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                            {new Date(record.created_at).toLocaleString([], {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold' }}>
+                          ✓ Attended
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="message-box" role="status" aria-live="polite">
               <span className="spinner" /> Validating...
@@ -262,7 +448,19 @@ export default function StudentDashboard() {
             )
           )}
 
-          <div id="reader" style={{ display: 'none' }}></div>
+          {/* Full History Access */}
+          {!showFullHistory && (
+            <div style={{ marginTop: '20px', textAlign: 'center' }}>
+              <button
+                className="btn btn-outline"
+                onClick={loadFullHistory}
+                disabled={isLoadingHistory}
+                style={{ fontSize: '0.85rem', padding: '8px 16px' }}
+              >
+                {isLoadingHistory ? 'Loading...' : '📚 View Complete Attendance History'}
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -276,12 +474,16 @@ export default function StudentDashboard() {
               width: '100%',
               maxWidth: '420px',
               margin: '0 auto',
+              background: '#f8f8f8',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: '1px solid #ddd'
             }}
           ></div>
           <button
             className="btn btn-danger"
             onClick={cancelScanner}
-            style={{ marginTop: '10px', width: '100%' }}
+            style={{ marginTop: '15px', width: '100%' }}
           >
             Cancel
           </button>
