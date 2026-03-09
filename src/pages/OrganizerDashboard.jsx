@@ -10,6 +10,62 @@ export default function OrganizerDashboard() {
   const [eventId, setEventId] = useState(''); 
   const [durationInput, setDurationInput] = useState('15'); 
   const [sessionTimeLeft, setSessionTimeLeft] = useState(0); 
+  const [isMobile, setIsMobile] = useState(false);
+
+  const clearOrganizerSessionStorage = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('qsams_organizer_event_id');
+    localStorage.removeItem('qsams_organizer_session_start');
+    localStorage.removeItem('qsams_organizer_session_duration_minutes');
+  };
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth <= 768);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Restore active session if it exists and hasn't expired
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const savedEventId = localStorage.getItem('qsams_organizer_event_id');
+    const startedAtStr = localStorage.getItem('qsams_organizer_session_start');
+    const durationStr = localStorage.getItem('qsams_organizer_session_duration_minutes');
+
+    if (!savedEventId || !startedAtStr || !durationStr) return;
+
+    const durationMinutes = parseInt(durationStr, 10);
+    const startedAt = parseInt(startedAtStr, 10);
+
+    if (isNaN(durationMinutes) || isNaN(startedAt)) {
+      clearOrganizerSessionStorage();
+      return;
+    }
+
+    const totalSeconds = durationMinutes * 60;
+    const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+    const remainingSeconds = totalSeconds - elapsedSeconds;
+
+    if (remainingSeconds <= 0) {
+      clearOrganizerSessionStorage();
+      return;
+    }
+
+    setEventId(savedEventId);
+    setDurationInput(String(durationMinutes));
+    setSessionTimeLeft(remainingSeconds);
+    setIsActive(true);
+  }, []);
 
   useEffect(() => {
     let rotationInterval;
@@ -31,6 +87,7 @@ export default function OrganizerDashboard() {
         setSessionTimeLeft((prevSession) => {
           if (prevSession <= 1) {
             clearInterval(rotationInterval); 
+            clearOrganizerSessionStorage();
             return 0;
           }
           return prevSession - 1;
@@ -69,6 +126,14 @@ export default function OrganizerDashboard() {
       return;
     }
 
+    const startedAt = Date.now();
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('qsams_organizer_event_id', cleanEventId);
+      localStorage.setItem('qsams_organizer_session_start', String(startedAt));
+      localStorage.setItem('qsams_organizer_session_duration_minutes', String(duration));
+    }
+
     setSessionTimeLeft(duration * 60);
     setIsActive(true);
   };
@@ -104,27 +169,128 @@ export default function OrganizerDashboard() {
 
   // --- FULLSCREEN VIEW ---
   if (isFullscreen && isActive) {
+    // Mobile-specific fullscreen layout
+    if (isMobile) {
+      return (
+        <div className="fullscreen-overlay mobile-fullscreen">
+          <button
+            className="btn-close-fullscreen"
+            style={{ fontSize: '1rem', padding: '6px 10px' }}
+            onClick={() => {
+              setIsFullscreen(false);
+              if (sessionTimeLeft === 0) setIsActive(false);
+            }}
+          >
+            ✖ Exit
+          </button>
+
+          <div
+            style={{
+              height: '100vh',
+              width: '100vw',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+              boxSizing: 'border-box',
+              textAlign: 'center',
+              gap: '16px',
+            }}
+          >
+            <h1
+              className="fullscreen-title"
+              style={{ fontSize: '1.4rem', margin: 0, wordBreak: 'break-word' }}
+            >
+              Event: {eventId.trim()}
+            </h1>
+
+            {sessionTimeLeft > 0 ? (
+              <>
+                <h2
+                  style={{
+                    color: '#cc0000',
+                    fontSize: '1.2rem',
+                    margin: 0,
+                  }}
+                >
+                  Session Ends In: {formatTime(sessionTimeLeft)}
+                </h2>
+                <QRCodeSVG value={secureToken} size={260} level="H" />
+                <p
+                  className="fullscreen-timer"
+                  style={{ fontSize: '0.95rem', margin: 0 }}
+                >
+                  Next QR update in: <strong>{timeLeft}s</strong>
+                </p>
+              </>
+            ) : (
+              <div className="cutoff-container" style={{ padding: '0 8px' }}>
+                <h2
+                  style={{
+                    color: '#cc0000',
+                    fontSize: '1.6rem',
+                    fontWeight: 800,
+                    margin: '0 0 8px 0',
+                  }}
+                >
+                  ATTENDANCE CUT-OFF
+                </h2>
+                <p style={{ fontSize: '1rem', color: '#000', margin: 0 }}>
+                  The scanning period has ended.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Desktop / larger-screen fullscreen layout (original)
     return (
       <div className="fullscreen-overlay">
-        <button className="btn-close-fullscreen" onClick={() => {
-          setIsFullscreen(false);
-          if (sessionTimeLeft === 0) setIsActive(false);
-        }}> ✖ Exit Presentation </button>
-        
+        <button
+          className="btn-close-fullscreen"
+          onClick={() => {
+            setIsFullscreen(false);
+            if (sessionTimeLeft === 0) setIsActive(false);
+          }}
+        >
+          ✖ Exit Presentation
+        </button>
+
         <h1 className="fullscreen-title">Event: {eventId.trim()}</h1>
-        
+
         {sessionTimeLeft > 0 ? (
           <>
-            <h2 style={{ color: '#cc0000', fontSize: '3rem', margin: '0 0 40px 0' }}>
+            <h2
+              style={{
+                color: '#cc0000',
+                fontSize: '3rem',
+                margin: '0 0 40px 0',
+              }}
+            >
               Session Ends In: {formatTime(sessionTimeLeft)}
             </h2>
             <QRCodeSVG value={secureToken} size={450} level="H" />
-            <p className="fullscreen-timer">Next QR update in: <strong>{timeLeft}s</strong></p>
+            <p className="fullscreen-timer">
+              Next QR update in: <strong>{timeLeft}s</strong>
+            </p>
           </>
         ) : (
           <div className="cutoff-container">
-            <h2 style={{ color: '#cc0000', fontSize: '5rem', fontWeight: '800' }}>ATTENDANCE CUT-OFF</h2>
-            <p style={{ fontSize: '2rem', color: '#000' }}>The scanning period has ended.</p>
+            <h2
+              style={{
+                color: '#cc0000',
+                fontSize: '5rem',
+                fontWeight: '800',
+              }}
+            >
+              ATTENDANCE CUT-OFF
+            </h2>
+            <p style={{ fontSize: '2rem', color: '#000' }}>
+              The scanning period has ended.
+            </p>
           </div>
         )}
       </div>
@@ -166,6 +332,7 @@ export default function OrganizerDashboard() {
             <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
             <button className="btn btn-danger" onClick={() => {
                 if (window.confirm("Are you sure you want to stop the session?")) {
+                  clearOrganizerSessionStorage();
                   setIsActive(false);
                 }
               }}>Stop Session</button>
