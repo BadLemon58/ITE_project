@@ -11,6 +11,7 @@ export default function StudentDashboard() {
   const [showManual, setShowManual] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const scannerRef = useRef(null);
+  const manualInputRef = useRef(null);
 
   useEffect(() => {
     const savedId = localStorage.getItem('qsams_student_id');
@@ -19,6 +20,13 @@ export default function StudentDashboard() {
       setIsRegistered(true);
     }
   }, []);
+
+  // Focus manual-entry Event ID when the manual section is opened
+  useEffect(() => {
+    if (showManual && manualInputRef.current) {
+      manualInputRef.current.focus();
+    }
+  }, [showManual]);
 
   const handleRegister = (e) => {
     e.preventDefault();
@@ -169,45 +177,94 @@ export default function StudentDashboard() {
     );
   }
 
-   return (
-  <div className="card student-card">
-    <div className="user-bar">
-      <span>ID: {studentId}</span>
-      <button onClick={handleLogout} className="logout-btn">Change ID</button>
-    </div>
+  const renderMessageWithLineBreaks = (text) => {
+    const parts = text.split('\n');
+    return parts.map((line, idx) => (
+      <span key={idx}>
+        {line}
+        {idx < parts.length - 1 && <br />}
+      </span>
+    ));
+  };
 
-    {!isScanning && (
-      <>
-        <h2>Student Portal</h2>
-        <div className="action-buttons">
-          <button className="btn btn-primary" onClick={startScanner}>Open QR Scanner</button>
-          <button className="btn btn-outline" onClick={() => setShowManual(!showManual)}>
-            {showManual ? "Hide Manual" : "Manual Entry"}
-          </button>
-        </div>
-        {showManual && (
-          <div className="manual-form">
-            <input type="text" placeholder="Event ID"
-              value={manualId} onChange={(e) => setManualId(e.target.value.toUpperCase())}
-              className="input-field" />
-            <button className="btn btn-primary" onClick={handleManualSubmit}>Submit</button>
+  return (
+    <div className="card student-card">
+      {!isScanning ? (
+        <>
+          <div className="user-bar">
+            <span>ID: {studentId}</span>
+            <button onClick={handleLogout} className="logout-btn">Change ID</button>
           </div>
-        )}
-        {isLoading ? (
-          <div className="message-box"><span className="spinner" /> Validating...</div>
-        ) : (
-          message && <div className="message-box">{message}</div>
-        )}
-      </>
-    )}
 
-   <div id="reader" style={{ display: isScanning ? 'block' : 'none' }}></div>
-    
-    {isScanning && (
-     <button className="btn btn-danger" onClick={cancelScanner} style={{ marginTop: '10px', width: '100%' }}>
-  Cancel
-</button>
-    )}
-  </div>
-);
+          <h2>Student Portal</h2>
+          <div className="action-buttons">
+            <button className="btn btn-primary" onClick={startScanner}>Open QR Scanner</button>
+            <button className="btn btn-outline" onClick={() => setShowManual(!showManual)}>
+              {showManual ? "Hide Manual" : "Manual Entry"}
+            </button>
+          </div>
+          {showManual && (
+            <div className="manual-form">
+              <input
+                type="text"
+                placeholder="Event ID"
+                value={manualId}
+                onChange={(e) => setManualId(e.target.value.toUpperCase())}
+                className="input-field"
+                ref={manualInputRef}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleManualSubmit();
+                  }
+                }}
+              />
+              <button className="btn btn-primary" onClick={handleManualSubmit}>Submit</button>
+              <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
+                Ask your organizer for the Event ID.
+              </p>
+            </div>
+          )}
+          {isLoading ? (
+            <div className="message-box"><span className="spinner" /> Validating...</div>
+          ) : (
+            message && (
+              <div className="message-box">
+                {renderMessageWithLineBreaks(message)}
+              </div>
+            )
+          )}
+
+          <div id="reader" style={{ display: 'none' }}></div>
+        </>
+      ) : (
+        <>
+          <h2>Scan QR Code</h2>
+          <p style={{ fontSize: '0.9rem', color: '#555', marginBottom: '10px' }}>
+            Align the QR code inside the box to record your attendance.
+          </p>
+          <div
+            id="reader"
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              margin: '0 auto',
+            }}
+          ></div>
+          <button
+            className="btn btn-danger"
+            onClick={cancelScanner}
+            style={{ marginTop: '10px', width: '100%' }}
+          >
+            Cancel
+          </button>
+          {message && (
+            <div className="message-box" style={{ marginTop: '10px' }}>
+              {renderMessageWithLineBreaks(message)}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }

@@ -11,6 +11,14 @@ export default function OrganizerDashboard() {
   const [durationInput, setDurationInput] = useState('15'); 
   const [sessionTimeLeft, setSessionTimeLeft] = useState(0); 
   const [isMobile, setIsMobile] = useState(false);
+  const [sessionStartedAt, setSessionStartedAt] = useState(null);
+  const [sessionDurationMinutes, setSessionDurationMinutes] = useState(null);
+  const [attendanceStats, setAttendanceStats] = useState({
+    total: 0,
+    recent: [],
+    error: null,
+  });
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   const clearOrganizerSessionStorage = () => {
     if (typeof window === 'undefined') return;
@@ -64,6 +72,8 @@ export default function OrganizerDashboard() {
     setEventId(savedEventId);
     setDurationInput(String(durationMinutes));
     setSessionTimeLeft(remainingSeconds);
+    setSessionStartedAt(startedAt);
+    setSessionDurationMinutes(durationMinutes);
     setIsActive(true);
   }, []);
 
@@ -134,9 +144,74 @@ export default function OrganizerDashboard() {
       localStorage.setItem('qsams_organizer_session_duration_minutes', String(duration));
     }
 
+    setSessionStartedAt(startedAt);
+    setSessionDurationMinutes(duration);
     setSessionTimeLeft(duration * 60);
     setIsActive(true);
   };
+
+  const extendSession = (extraMinutes) => {
+    if (!isActive || !eventId) return;
+
+    setSessionDurationMinutes((prev) => {
+      const base = prev != null ? prev : parseInt(durationInput, 10) || 0;
+      const updated = base + extraMinutes;
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          'qsams_organizer_session_duration_minutes',
+          String(updated)
+        );
+      }
+
+      return updated;
+    });
+
+    setSessionTimeLeft((prev) => prev + extraMinutes * 60);
+  };
+
+  // Live attendance stats for active event
+  useEffect(() => {
+    if (!isActive || !eventId) return;
+    let cancelled = false;
+
+    const fetchStats = async () => {
+      setIsLoadingStats(true);
+      const cleanId = eventId.trim();
+
+      const { data, error, count } = await supabase
+        .from('attendance')
+        .select('student_id, created_at', { count: 'exact' })
+        .eq('event_id', cleanId)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (cancelled) return;
+
+      if (error) {
+        setAttendanceStats((prev) => ({
+          ...prev,
+          error: error.message || 'Unable to load attendance stats.',
+        }));
+      } else {
+        setAttendanceStats({
+          total: typeof count === 'number' ? count : (data ? data.length : 0),
+          recent: data || [],
+          error: null,
+        });
+      }
+
+      setIsLoadingStats(false);
+    };
+
+    fetchStats();
+    const intervalId = setInterval(fetchStats, 10000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [isActive, eventId]);
 
   const formatTime = (totalSeconds) => {
     const m = Math.floor(totalSeconds / 60);
@@ -313,11 +388,82 @@ export default function OrganizerDashboard() {
           <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 10px', borderRadius: '6px', display: 'inline-block', margin: '0 0 5px 0' }}>
             Active Event: <strong>{eventId.trim()}</strong>
           </p>
-          <p style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '1.1rem', margin: '0 0 10px 0' }}>
+          <p style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '1.1rem', margin: '0 0 6px 0' }}>
             Time Left: {formatTime(sessionTimeLeft)}
           </p>
+
+          {sessionStartedAt && sessionDurationMinutes != null && (
+            <div style={{ fontSize: '0.85rem', color: '#333', marginBottom: '10px' }}>
+              <p style={{ margin: '0 0 2px 0' }}>
+                Started:{' '}
+                <strong>
+                  {new Date(sessionStartedAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </strong>
+              </p>
+              <p style={{ margin: '0 0 2px 0' }}>
+                Ends:{' '}
+                <strong>
+                  {new Date(
+                    sessionStartedAt + sessionDurationMinutes * 60000
+                  ).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </strong>
+              </p>
+              <p style={{ margin: 0 }}>
+                Total Duration:{' '}
+                <strong>{sessionDurationMinutes} min</strong>
+              </p>
+            </div>
+          )}
+
+          {sessionTimeLeft === 0 && (
+            <div
+              style={{
+                backgroundColor: '#ffe6e6',
+                color: '#990000',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                marginBottom: '10px',
+              }}
+            >
+              <strong>Session ended.</strong>{' '}
+              <button
+                className="btn btn-primary"
+                style={{ marginLeft: '8px', padding: '4px 10px', fontSize: '0.8rem' }}
+                onClick={() => {
+                  clearOrganizerSessionStorage();
+                  setIsActive(false);
+                  setSessionTimeLeft(0);
+                  setEventId('');
+                  setSessionStartedAt(null);
+                  setSessionDurationMinutes(null);
+                  setAttendanceStats({
+                    total: 0,
+                    recent: [],
+                    error: null,
+                  });
+                }}
+              >
+                Start New Session
+              </button>
+            </div>
+          )}
           
-         <div style={{ display: 'flex', flexDirection: 'row', gap: '15px', alignItems: 'center', width: '100%' }}>
+         <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: '15px',
+            alignItems: 'flex-start',
+            width: '100%',
+            flexWrap: 'wrap',
+          }}
+        >
   
           {/* Left: QR Code */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
@@ -328,15 +474,91 @@ export default function OrganizerDashboard() {
           </div>
 
           {/* Right: Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-outline"
+                style={{ flex: '1 1 80px' }}
+                onClick={() => extendSession(5)}
+              >
+                +5 min
+              </button>
+              <button
+                className="btn btn-outline"
+                style={{ flex: '1 1 80px' }}
+                onClick={() => extendSession(10)}
+              >
+                +10 min
+              </button>
+            </div>
             <button className="btn btn-danger" onClick={() => {
                 if (window.confirm("Are you sure you want to stop the session?")) {
                   clearOrganizerSessionStorage();
                   setIsActive(false);
+                  setSessionTimeLeft(0);
+                  setSessionStartedAt(null);
+                  setSessionDurationMinutes(null);
+                  setAttendanceStats({
+                    total: 0,
+                    recent: [],
+                    error: null,
+                  });
                 }
               }}>Stop Session</button>
             <button className="btn btn-outline" onClick={exportToCSV}>📊 Export CSV</button>
+          </div>
+
+          {/* Attendance overview */}
+          <div
+            style={{
+              marginLeft: '10px',
+              marginTop: '10px',
+              padding: '8px 10px',
+              borderRadius: '8px',
+              border: '1px solid #ddd',
+              backgroundColor: '#fafafa',
+              flex: '1 1 220px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', fontSize: '0.9rem' }}>
+              Attendance Overview
+            </p>
+            {isLoadingStats ? (
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>Loading...</p>
+            ) : attendanceStats.error ? (
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#b30000' }}>
+                {attendanceStats.error}
+              </p>
+            ) : (
+              <>
+                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem' }}>
+                  Total scans:{' '}
+                  <strong>{attendanceStats.total}</strong>
+                </p>
+                {attendanceStats.recent && attendanceStats.recent.length > 0 && (
+                  <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+                    <p style={{ margin: '0 0 2px 0', fontWeight: 'bold' }}>Last attendees:</p>
+                    <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                      {attendanceStats.recent.map((row, idx) => (
+                        <li key={idx} style={{ marginBottom: '2px' }}>
+                          <span>{row.student_id}</span>{' '}
+                          <span style={{ color: '#666' }}>
+                            (
+                            {new Date(row.created_at).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                            )
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
         </div>
