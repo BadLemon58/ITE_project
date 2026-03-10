@@ -1,7 +1,7 @@
-/* --- GLOBAL RESET & LAYOUT --- */
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f7f4 !important; /* Light grey-green tint for contrast */
+  background-color: #f4f7f4 !important; 
   margin: 0;
   display: flex;
   justify-content: center;
@@ -20,7 +20,7 @@ body {
   align-items: center; 
 }
 
-/* --- NAVIGATION & LOGO --- */
+
 .top-nav {
   text-align: center;
   width: 100%;
@@ -73,7 +73,7 @@ body {
   font-weight: 900;
 }
 
-/* --- THE CARD --- */
+
 .card {
   background: #ffffff;
   width: 100%;
@@ -144,7 +144,7 @@ body {
   font-weight: bold;
 }
 
-/* --- BUTTONS & ACTIONS --- */
+
 .action-buttons {
   width: 100%;
   display: flex;
@@ -190,7 +190,7 @@ button:active {
   transform: scale(0.98);
 }
 
-/* --- INPUTS & FORMS --- */
+
 .manual-form {
   width: 100%;         
   max-width: 100%;
@@ -207,8 +207,8 @@ button:active {
   border-radius: 8px;
   box-sizing: border-box;
   font-size: 1rem;
-  background-color: #ffffff !important; /* Fix for dark background issue */
-  color: #000000 !important; /* Fix for invisible text issue */
+  background-color: #ffffff !important; 
+  color: #000000 !important; 
 }
 
 .input-field::placeholder {
@@ -216,7 +216,7 @@ button:active {
   opacity: 0.6;   
 }
 
-/* --- SCANNER & QR --- */
+
 #reader {
   width: 100%;
   max-height: 200px;
@@ -260,7 +260,7 @@ button:active {
   opacity: 0.6;
 }
 
-/* --- FULLSCREEN MODE --- */
+
 .fullscreen-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -287,7 +287,7 @@ button:active {
   margin: 30px 0;
 }
 
-/* --- CUT-OFF VIEW --- */
+
 .cutoff-container {
   background: #fff;
   padding: 40px;
@@ -302,7 +302,7 @@ button:active {
   to { opacity: 1; transform: scale(1); }
 }
 
-/* --- EXIT BUTTON --- */
+
 .btn-close-fullscreen {
   position: fixed;
   top: 20px;
@@ -360,7 +360,7 @@ button:active {
   to { transform: rotate(360deg); }
 }
 
-/* --- FOCUS STYLES FOR ACCESSIBILITY --- */
+
 button:focus-visible,
 .nav-links a:focus-visible,
 .input-field:focus-visible {

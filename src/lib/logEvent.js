@@ -4,7 +4,9 @@ export async function logEvent(type, message, meta = null) {
   try {
     await supabase.from('logs').insert([{ type, message, meta }]);
   } catch (error) {
-    // Silently fail - logging is not critical for app functionality
+    
   }
 }
+
+
 

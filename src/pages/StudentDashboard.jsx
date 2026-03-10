@@ -18,22 +18,22 @@ export default function StudentDashboard() {
   const scannerRef = useRef(null);
   const manualInputRef = useRef(null);
 
-  // Helper to play a success sound and vibrate
+  
   const triggerSuccessFeedback = () => {
-    // 1. Vibration (for mobile)
+    
     if ("vibrate" in navigator) {
-      navigator.vibrate([100, 50, 100]); // Short double pulse
+      navigator.vibrate([100, 50, 100]); 
     }
 
-    // 2. Success Beep (Web Audio API)
+    
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
 
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1); // Drop to A4
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
+      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1); 
 
       gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
@@ -48,7 +48,7 @@ export default function StudentDashboard() {
     }
   };
 
-  // Helper to add scan to history
+  
   const addToScanHistory = (eventId) => {
     const newScan = {
       eventId,
@@ -57,13 +57,13 @@ export default function StudentDashboard() {
     };
 
     setScanHistory(prev => {
-      const updated = [newScan, ...prev].slice(0, 10); // Keep only last 10
+      const updated = [newScan, ...prev].slice(0, 10); 
       localStorage.setItem('qsams_scan_history', JSON.stringify(updated));
       return updated;
     });
   };
 
-  // Load full attendance history from database
+  
   const loadFullHistory = async () => {
     if (isLoadingHistory) return;
     setIsLoadingHistory(true);
@@ -98,7 +98,7 @@ export default function StudentDashboard() {
       setIsRegistered(true);
     }
 
-    // Load scan history
+    
     const savedHistory = localStorage.getItem('qsams_scan_history');
     if (savedHistory) {
       try {
@@ -109,14 +109,14 @@ export default function StudentDashboard() {
     }
   }, []);
 
-  // Focus manual-entry Event ID when the manual section is opened
+  
   useEffect(() => {
     if (showManual && manualInputRef.current) {
       manualInputRef.current.focus();
     }
   }, [showManual]);
 
-  // Handle scanner start/stop based on isScanning state
+  
   useEffect(() => {
     let html5QrCode = null;
 
@@ -156,7 +156,7 @@ export default function StudentDashboard() {
               processScan(decodedText);
             }
           ).catch(err => {
-            throw err; // Re-throw to be caught by outer try-catch
+            throw err; 
           });
         } catch (err) {
           console.error("Scanner error:", err);
@@ -172,7 +172,7 @@ export default function StudentDashboard() {
     }
 
     return () => {
-      // Cleanup: stop the scanner if the component unmounts or isScanning becomes false
+      
       if (scannerRef.current) {
         scannerRef.current.stop().catch(() => {});
         scannerRef.current = null;
@@ -286,7 +286,7 @@ export default function StudentDashboard() {
         event_id: cleanEventId,
         student_id: studentId,
       });
-      setTimeout(() => setMessage(''), 4000); // clears after 4 seconds
+      setTimeout(() => setMessage(''), 4000); 
     }
   };
 
@@ -378,7 +378,7 @@ export default function StudentDashboard() {
           )}
 
 
-          {/* Full Attendance History */}
+          {}
           {showFullHistory && (
             <div className="full-history" style={{ marginTop: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -448,7 +448,7 @@ export default function StudentDashboard() {
             )
           )}
 
-          {/* Full History Access */}
+          {}
           {!showFullHistory && (
             <div style={{ marginTop: '20px', textAlign: 'center' }}>
               <button
@@ -502,3 +502,5 @@ export default function StudentDashboard() {
     </div>
   );
 }
+
+

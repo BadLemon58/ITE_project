@@ -21,7 +21,7 @@ export default function OrganizerDashboard() {
   });
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [organizerMessage, setOrganizerMessage] = useState('');
-  const [organizerMessageType, setOrganizerMessageType] = useState('info'); // 'info' | 'error' | 'success'
+  const [organizerMessageType, setOrganizerMessageType] = useState('info'); 
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -50,7 +50,7 @@ export default function OrganizerDashboard() {
     };
   }, []);
 
-  // Restore active session if it exists and hasn't expired
+  
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -77,7 +77,7 @@ export default function OrganizerDashboard() {
       return;
     }
 
-    setEventId(savedEventId);
+    setEventId(savedEventId.toUpperCase());
     setDurationInput(String(durationMinutes));
     setSessionTimeLeft(remainingSeconds);
     setSessionStartedAt(startedAt);
@@ -121,7 +121,8 @@ export default function OrganizerDashboard() {
 
   const handleStartSession = async () => {
     if (isStartingSession) return;
-    const cleanEventId = eventId.trim();
+    
+    const cleanEventId = eventId.trim().toUpperCase();
     if (cleanEventId.length === 0) {
       setOrganizerMessageType('error');
       setOrganizerMessage('Please enter an Event ID before starting.');
@@ -164,6 +165,7 @@ export default function OrganizerDashboard() {
     }
 
     if (typeof window !== 'undefined') {
+      
       localStorage.setItem('qsams_organizer_event_id', cleanEventId);
       localStorage.setItem('qsams_organizer_session_start', String(startedAt));
       localStorage.setItem('qsams_organizer_session_duration_minutes', String(duration));
@@ -173,6 +175,7 @@ export default function OrganizerDashboard() {
     setSessionDurationMinutes(duration);
     setSessionTimeLeft(duration * 60);
     setIsActive(true);
+    setEventId(cleanEventId); 
     setOrganizerMessageType('success');
     setOrganizerMessage(`Session started for event "${cleanEventId}".`);
     logEvent('session_start', 'Session started', {
@@ -204,21 +207,21 @@ export default function OrganizerDashboard() {
 
   const [liveAttendance, setLiveAttendance] = useState([]);
 
-  // Live attendance stats for active event
+  
   useEffect(() => {
     if (!isActive || !eventId) return;
     let cancelled = false;
 
     const fetchStats = async () => {
       setIsLoadingStats(true);
-      const cleanId = eventId.trim();
+      const cleanId = eventId.trim().toUpperCase();
 
       const { data, error, count } = await supabase
         .from('attendance')
         .select('student_id, created_at', { count: 'exact' })
         .eq('event_id', cleanId)
         .order('created_at', { ascending: false })
-        .limit(50); // Get more for live feed
+        .limit(50); 
 
       if (cancelled) return;
 
@@ -230,10 +233,10 @@ export default function OrganizerDashboard() {
       } else {
         setAttendanceStats({
           total: typeof count === 'number' ? count : (data ? data.length : 0),
-          recent: data ? data.slice(0, 3) : [], // Keep only 3 for stats
+          recent: data ? data.slice(0, 3) : [], 
           error: null,
         });
-        setLiveAttendance(data || []); // Store all for live feed
+        setLiveAttendance(data || []); 
       }
 
       setIsLoadingStats(false);
@@ -241,16 +244,21 @@ export default function OrganizerDashboard() {
 
     fetchStats();
 
-    // Set up real-time subscription for live updates
+    
+    const pollInterval = setInterval(() => {
+      if (!cancelled) fetchStats();
+    }, 5000);
+
+    
     const channel = supabase
-      .channel(`attendance_${eventId.trim()}`)
+      .channel(`attendance_${eventId.trim().toUpperCase()}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'attendance',
-          filter: `event_id=eq.${eventId.trim()}`,
+          filter: `event_id=eq.${eventId.trim().toUpperCase()}`,
         },
         (payload) => {
           if (cancelled) return;
@@ -260,7 +268,7 @@ export default function OrganizerDashboard() {
           setAttendanceStats(prev => ({
             ...prev,
             total: prev.total + 1,
-            recent: [newAttendance, ...prev.recent.slice(0, 2)], // Keep only 3 recent
+            recent: [newAttendance, ...prev.recent.slice(0, 2)], 
           }));
         }
       )
@@ -268,6 +276,7 @@ export default function OrganizerDashboard() {
 
     return () => {
       cancelled = true;
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, [isActive, eventId]);
@@ -286,7 +295,7 @@ export default function OrganizerDashboard() {
     const { data, error } = await supabase
       .from('attendance')
       .select('student_id, created_at')
-      .eq('event_id', eventId.trim());
+      .eq('event_id', eventId.trim().toUpperCase());
 
     if (error) {
       setIsExportingCsv(false);
@@ -337,7 +346,7 @@ export default function OrganizerDashboard() {
     setOrganizerMessage('');
 
     try {
-      // Get all events with their attendance counts
+      
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select('event_id, event_name, event_date, end_time')
@@ -346,7 +355,7 @@ export default function OrganizerDashboard() {
 
       if (eventsError) throw eventsError;
 
-      // For each event, get attendance count
+      
       const eventsWithCounts = await Promise.all(
         eventsData.map(async (event) => {
           const { count, error: countError } = await supabase
@@ -417,9 +426,9 @@ export default function OrganizerDashboard() {
     setOrganizerMessage(`CSV exported for event "${eventId}".`);
   };
 
-  // --- FULLSCREEN VIEW ---
+  
   if (isFullscreen && isActive) {
-    // Mobile-specific fullscreen layout
+    
     if (isMobile) {
       return (
         <div className="fullscreen-overlay mobile-fullscreen">
@@ -498,7 +507,7 @@ export default function OrganizerDashboard() {
       );
     }
 
-    // Desktop / larger-screen fullscreen layout (original)
+    
     return (
       <div className="fullscreen-overlay">
         <button
@@ -675,7 +684,7 @@ export default function OrganizerDashboard() {
           }}
         >
   
-          {/* Left: QR Code */}
+          {}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
             <QRCodeSVG value={secureToken} size={160} level="H" />
             <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 8px', borderRadius: '6px', marginTop: '10px', fontSize: '0.85rem' }}>
@@ -683,7 +692,7 @@ export default function OrganizerDashboard() {
             </p>
           </div>
 
-          {/* Right: Buttons */}
+          {}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -731,7 +740,7 @@ export default function OrganizerDashboard() {
             </button>
           </div>
 
-          {/* Attendance overview */}
+          {}
           <div
             style={{
               marginLeft: '10px',
@@ -789,7 +798,7 @@ export default function OrganizerDashboard() {
         </>
       )}
 
-      {/* Past Events History */}
+      {}
       <div style={{ marginTop: '30px', borderTop: '1px solid #ddd', paddingTop: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#333' }}>📚 Past Events History</h3>
@@ -876,3 +885,4 @@ export default function OrganizerDashboard() {
     </div>
   );
 }
+
