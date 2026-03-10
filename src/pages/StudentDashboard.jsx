@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { logEvent } from '../lib/logEvent';
 
 export default function StudentDashboard() {
+  // --- State Management ---
   const [studentId, setStudentId] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -18,14 +19,12 @@ export default function StudentDashboard() {
   const scannerRef = useRef(null);
   const manualInputRef = useRef(null);
 
-  
+  // --- Helper: Success Feedback (Vibration & Audio) ---
   const triggerSuccessFeedback = () => {
-    
     if ("vibrate" in navigator) {
       navigator.vibrate([100, 50, 100]); 
     }
 
-    
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioCtx.createOscillator();
@@ -48,7 +47,7 @@ export default function StudentDashboard() {
     }
   };
 
-  
+  // --- Helper: Local Scan History ---
   const addToScanHistory = (eventId) => {
     const newScan = {
       eventId,
@@ -63,7 +62,7 @@ export default function StudentDashboard() {
     });
   };
 
-  
+  // --- Handler: Load Full Attendance History ---
   const loadFullHistory = async () => {
     if (isLoadingHistory) return;
     setIsLoadingHistory(true);
@@ -91,6 +90,7 @@ export default function StudentDashboard() {
     }
   };
 
+  // --- Effects: Initialization & Focus ---
   useEffect(() => {
     const savedId = localStorage.getItem('qsams_student_id');
     if (savedId) {
@@ -98,7 +98,6 @@ export default function StudentDashboard() {
       setIsRegistered(true);
     }
 
-    
     const savedHistory = localStorage.getItem('qsams_scan_history');
     if (savedHistory) {
       try {
@@ -109,21 +108,19 @@ export default function StudentDashboard() {
     }
   }, []);
 
-  
   useEffect(() => {
     if (showManual && manualInputRef.current) {
       manualInputRef.current.focus();
     }
   }, [showManual]);
 
-  
+  // --- Effect: QR Scanner Lifecycle ---
   useEffect(() => {
     let html5QrCode = null;
 
     if (isScanning) {
       const startCamera = async () => {
         try {
-         
           await new Promise(resolve => setTimeout(resolve, 200));
           
           const element = document.getElementById("reader");
@@ -143,7 +140,6 @@ export default function StudentDashboard() {
               aspectRatio: 1.0
             },
             async (decodedText) => {
-             
               if (scannerRef.current) {
                 try {
                   await scannerRef.current.stop();
@@ -172,7 +168,6 @@ export default function StudentDashboard() {
     }
 
     return () => {
-      
       if (scannerRef.current) {
         scannerRef.current.stop().catch(() => {});
         scannerRef.current = null;
@@ -180,6 +175,7 @@ export default function StudentDashboard() {
     };
   }, [isScanning]);
 
+  // --- Handlers: Registration & Logout ---
   const handleRegister = (e) => {
     e.preventDefault();
     const cleanId = studentId.trim();
@@ -198,6 +194,7 @@ export default function StudentDashboard() {
     setStudentId('');
   };
 
+  // --- Handlers: Scanner Controls ---
   const startScanner = () => {
     setIsScanning(true);
     setMessage('');
@@ -207,6 +204,7 @@ export default function StudentDashboard() {
     setIsScanning(false);
   };
 
+  // --- Handler: QR Code Processing ---
   const processScan = (decodedText) => {
     const parts = decodedText.split('|');
     const scannedEventId = parts[0];
@@ -234,6 +232,7 @@ export default function StudentDashboard() {
     submitAttendance(scannedEventId);
   };
 
+  // --- Handler: Manual Entry Submission ---
   const handleManualSubmit = () => {
     if (!manualId.trim()) return;
     const cleanEventId = manualId.trim().toUpperCase();
@@ -248,11 +247,12 @@ export default function StudentDashboard() {
       return;
     }
 
-   localStorage.setItem(`scanned_${cleanEventId}`, studentId);
-  setManualId('');  
-  submitAttendance(cleanEventId);
+    localStorage.setItem(`scanned_${cleanEventId}`, studentId);
+    setManualId('');  
+    submitAttendance(cleanEventId);
   };
 
+  // --- Handler: Database Attendance Submission ---
   const submitAttendance = async (rawEventId) => {
     const cleanEventId = rawEventId.trim().toUpperCase();
     setIsLoading(true);
@@ -290,7 +290,19 @@ export default function StudentDashboard() {
     }
   };
 
+  // --- Helper: Message Rendering ---
+  const renderMessageWithLineBreaks = (text) => {
+    const parts = text.split('\n');
+    return parts.map((line, idx) => (
+      <span key={idx}>
+        {line}
+        {idx < parts.length - 1 && <br />}
+      </span>
+    ));
+  };
 
+
+  // --- UI View: Registration ---
   if (!isRegistered) {
     return (
       <div className="card student-card">
@@ -328,16 +340,8 @@ export default function StudentDashboard() {
     );
   }
 
-  const renderMessageWithLineBreaks = (text) => {
-    const parts = text.split('\n');
-    return parts.map((line, idx) => (
-      <span key={idx}>
-        {line}
-        {idx < parts.length - 1 && <br />}
-      </span>
-    ));
-  };
 
+  // --- UI View: Student Portal ---
   return (
     <div className="card student-card">
       {!isScanning ? (
@@ -378,7 +382,7 @@ export default function StudentDashboard() {
           )}
 
 
-          {}
+          {/* Detailed History Display */}
           {showFullHistory && (
             <div className="full-history" style={{ marginTop: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -402,7 +406,7 @@ export default function StudentDashboard() {
                       Total events attended: <strong>{fullHistory.length}</strong>
                     </div>
                     {fullHistory.map((record, index) => (
-                      <div key={index} style={{ 
+                      <div key={record.event_id + index} style={{ 
                         padding: '10px', 
                         marginBottom: '8px',
                         backgroundColor: '#fafafa',
@@ -448,7 +452,6 @@ export default function StudentDashboard() {
             )
           )}
 
-          {}
           {!showFullHistory && (
             <div style={{ marginTop: '20px', textAlign: 'center' }}>
               <button
@@ -463,6 +466,7 @@ export default function StudentDashboard() {
           )}
         </>
       ) : (
+        // --- UI View: QR Scanner ---
         <>
           <h2>Scan QR Code</h2>
           <p style={{ fontSize: '0.9rem', color: '#555', marginBottom: '10px' }}>
@@ -502,5 +506,3 @@ export default function StudentDashboard() {
     </div>
   );
 }
-
-

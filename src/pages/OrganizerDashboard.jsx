@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { logEvent } from '../lib/logEvent';
 
 export default function OrganizerDashboard() {
+  // --- UI & Session State ---
   const [isActive, setIsActive] = useState(false);
   const [secureToken, setSecureToken] = useState('');
   const [timeLeft, setTimeLeft] = useState(30); 
@@ -14,6 +15,8 @@ export default function OrganizerDashboard() {
   const [isMobile, setIsMobile] = useState(false);
   const [sessionStartedAt, setSessionStartedAt] = useState(null);
   const [sessionDurationMinutes, setSessionDurationMinutes] = useState(null);
+  
+  // --- Attendance & History State ---
   const [attendanceStats, setAttendanceStats] = useState({
     total: 0,
     recent: [],
@@ -28,6 +31,7 @@ export default function OrganizerDashboard() {
   const [pastEvents, setPastEvents] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
+  // --- Storage Helpers ---
   const clearOrganizerSessionStorage = () => {
     if (typeof window === 'undefined') return;
     localStorage.removeItem('qsams_organizer_event_id');
@@ -35,6 +39,7 @@ export default function OrganizerDashboard() {
     localStorage.removeItem('qsams_organizer_session_duration_minutes');
   };
 
+  // --- Effects: Layout & Initialization ---
   useEffect(() => {
     const handleResize = () => {
       if (typeof window !== 'undefined') {
@@ -50,7 +55,6 @@ export default function OrganizerDashboard() {
     };
   }, []);
 
-  
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -85,6 +89,7 @@ export default function OrganizerDashboard() {
     setIsActive(true);
   }, []);
 
+  // --- Effect: Token Rotation & Session Timer ---
   useEffect(() => {
     let rotationInterval;
     let tickInterval;
@@ -119,6 +124,7 @@ export default function OrganizerDashboard() {
     };
   }, [isActive, eventId]);
 
+  // --- Handlers: Session Management ---
   const handleStartSession = async () => {
     if (isStartingSession) return;
     
@@ -207,7 +213,7 @@ export default function OrganizerDashboard() {
 
   const [liveAttendance, setLiveAttendance] = useState([]);
 
-  
+  // --- Effect: Real-time Attendance Updates ---
   useEffect(() => {
     if (!isActive || !eventId) return;
     let cancelled = false;
@@ -287,6 +293,7 @@ export default function OrganizerDashboard() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
   
+  // --- Handlers: Data Export & History ---
   const exportToCSV = async () => {
     if (isExportingCsv || !eventId.trim()) return;
     setIsExportingCsv(true);
@@ -426,7 +433,7 @@ export default function OrganizerDashboard() {
     setOrganizerMessage(`CSV exported for event "${eventId}".`);
   };
 
-  
+  // --- UI View: Fullscreen Presentation ---
   if (isFullscreen && isActive) {
     
     if (isMobile) {
@@ -560,6 +567,7 @@ export default function OrganizerDashboard() {
     );
   }
 
+  // --- UI View: Organizer Panel ---
   return (
     <div className="card organizer-card">
       <h2>Organizer Panel</h2>
@@ -684,7 +692,7 @@ export default function OrganizerDashboard() {
           }}
         >
   
-          {}
+          {/* QR Display */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
             <QRCodeSVG value={secureToken} size={160} level="H" />
             <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 8px', borderRadius: '6px', marginTop: '10px', fontSize: '0.85rem' }}>
@@ -692,7 +700,7 @@ export default function OrganizerDashboard() {
             </p>
           </div>
 
-          {}
+          {/* Session Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -740,7 +748,7 @@ export default function OrganizerDashboard() {
             </button>
           </div>
 
-          {}
+          {/* Stats Overview */}
           <div
             style={{
               marginLeft: '10px',
@@ -773,7 +781,7 @@ export default function OrganizerDashboard() {
                     <p style={{ margin: '0 0 2px 0', fontWeight: 'bold' }}>Last attendees:</p>
                     <ul style={{ margin: 0, paddingLeft: '16px' }}>
                       {attendanceStats.recent.map((row, idx) => (
-                        <li key={idx} style={{ marginBottom: '2px' }}>
+                        <li key={row.student_id + idx} style={{ marginBottom: '2px' }}>
                           <span>{row.student_id}</span>{' '}
                           <span style={{ color: '#666' }}>
                             (
@@ -793,12 +801,10 @@ export default function OrganizerDashboard() {
           </div>
 
         </div>
-
-        
         </>
       )}
 
-      {}
+      {/* --- UI Section: History --- */}
       <div style={{ marginTop: '30px', borderTop: '1px solid #ddd', paddingTop: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#333' }}>📚 Past Events History</h3>
@@ -885,4 +891,3 @@ export default function OrganizerDashboard() {
     </div>
   );
 }
-
