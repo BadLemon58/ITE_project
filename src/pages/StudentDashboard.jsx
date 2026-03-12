@@ -240,7 +240,7 @@ export default function StudentDashboard() {
 
     if (previouslyScannedId) {
       if (previouslyScannedId === studentId) {
-        setMessage("You have already recorded \nyour attendance for this event!");
+        setMessage("You have already recorded your attendance for this event!");
       } else {
         setMessage("This device has already been used by another student.");
       }
@@ -268,9 +268,9 @@ export default function StudentDashboard() {
 
     if (previouslyScannedId) {
       if (previouslyScannedId === studentId) {
-        setMessage("You have already recorded \nyour attendance for this event!");
+        setMessage("You have already recorded your attendance for this event!");
       } else {
-        setMessage("This device has already been\n used by another student.");
+        setMessage("This device has already been used by another student.");
       }
       return;
     }
