@@ -16,6 +16,7 @@ export default function StudentDashboard() {
   const [showFullHistory, setShowFullHistory] = useState(false);
   const [fullHistory, setFullHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [pendingScan, setPendingScan] = useState(null);
   const scannerRef = useRef(null);
   const manualInputRef = useRef(null);
 
@@ -106,7 +107,21 @@ export default function StudentDashboard() {
         console.warn('Failed to parse scan history:', e);
       }
     }
+
+    const params = new URLSearchParams(window.location.search);
+    const scanParam = params.get('scan');
+    if (scanParam) {
+      setPendingScan(scanParam);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
+
+  useEffect(() => {
+    if (isRegistered && pendingScan && studentId) {
+      processScan(pendingScan);
+      setPendingScan(null);
+    }
+  }, [isRegistered, pendingScan, studentId]);
 
   useEffect(() => {
     if (showManual && manualInputRef.current) {
@@ -206,7 +221,20 @@ export default function StudentDashboard() {
 
   // --- Handler: QR Code Processing ---
   const processScan = (decodedText) => {
-    const parts = decodedText.split('|');
+    let token = decodedText;
+    try {
+      if (decodedText.startsWith("http://") || decodedText.startsWith("https://")) {
+        const url = new URL(decodedText);
+        const scanParam = url.searchParams.get("scan");
+        if (scanParam) {
+          token = scanParam;
+        }
+      }
+    } catch (e) {
+      // Ignored
+    }
+
+    const parts = token.split('|');
     const scannedEventId = parts[0];
     const previouslyScannedId = localStorage.getItem(`scanned_${scannedEventId}`);
 
