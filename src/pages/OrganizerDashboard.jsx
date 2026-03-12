@@ -98,7 +98,7 @@ export default function OrganizerDashboard() {
       const generateToken = () => {
         const timestamp = Date.now();
         const tokenStr = `${eventId.trim()}|${timestamp}`;
-        const currentOrigin = "https://qsams.vercel.app";
+        const currentOrigin = window.location.origin;
         setSecureToken(`${currentOrigin}/?scan=${encodeURIComponent(tokenStr)}`);
         setTimeLeft(30); 
       };
