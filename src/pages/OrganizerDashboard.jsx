@@ -4,12 +4,18 @@ import { supabase } from '../supabaseClient';
 import { logEvent } from '../lib/logEvent';
 
 export default function OrganizerDashboard() {
+  // --- Auth State ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState('');
+
   // --- UI & Session State ---
   const [isActive, setIsActive] = useState(false);
   const [secureToken, setSecureToken] = useState('');
   const [timeLeft, setTimeLeft] = useState(30); 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [eventId, setEventId] = useState(''); 
+  const [eventName, setEventName] = useState('');
   const [durationInput, setDurationInput] = useState('15'); 
   const [sessionTimeLeft, setSessionTimeLeft] = useState(0); 
   const [isMobile, setIsMobile] = useState(false);
@@ -30,14 +36,71 @@ export default function OrganizerDashboard() {
   const [showHistory, setShowHistory] = useState(false);
   const [pastEvents, setPastEvents] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [liveAttendance, setLiveAttendance] = useState([]);
 
   // --- Storage Helpers ---
   const clearOrganizerSessionStorage = () => {
     if (typeof window === 'undefined') return;
     localStorage.removeItem('qsams_organizer_event_id');
+    localStorage.removeItem('qsams_organizer_event_name');
     localStorage.removeItem('qsams_organizer_session_start');
     localStorage.removeItem('qsams_organizer_session_duration_minutes');
   };
+
+  // --- Utility Helpers ---
+  // Fix #8: Auto-generate short, easy-to-type event codes
+  const generateEventCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    const array = new Uint8Array(5);
+    crypto.getRandomValues(array);
+    for (let i = 0; i < 5; i++) {
+      code += chars[array[i] % chars.length];
+    }
+    return code;
+  };
+
+  // Fix #5: Generate cryptographic nonce for QR anti-forgery
+  const generateNonce = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let nonce = '';
+    const array = new Uint8Array(8);
+    crypto.getRandomValues(array);
+    for (let i = 0; i < 8; i++) {
+      nonce += chars[array[i] % chars.length];
+    }
+    return nonce;
+  };
+
+  // Fix #11: Sanitize CSV fields to prevent formula injection
+  const sanitizeCSVField = (value) => {
+    const strValue = String(value);
+    if (/^[=+\-@\t\r]/.test(strValue)) {
+      return "'" + strValue;
+    }
+    return strValue;
+  };
+
+  // --- Auth Handler (#1) ---
+  const handleLogin = () => {
+    if (passwordInput === 'admin') {
+      setIsAuthenticated(true);
+      setAuthError('');
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('qsams_organizer_auth', 'true');
+      }
+    } else {
+      setAuthError('Incorrect password. Please try again.');
+    }
+  };
+
+  // --- Effects: Auth Check ---
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const auth = sessionStorage.getItem('qsams_organizer_auth');
+      if (auth === 'true') setIsAuthenticated(true);
+    }
+  }, []);
 
   // --- Effects: Layout & Initialization ---
   useEffect(() => {
@@ -59,6 +122,7 @@ export default function OrganizerDashboard() {
     if (typeof window === 'undefined') return;
 
     const savedEventId = localStorage.getItem('qsams_organizer_event_id');
+    const savedEventName = localStorage.getItem('qsams_organizer_event_name');
     const startedAtStr = localStorage.getItem('qsams_organizer_session_start');
     const durationStr = localStorage.getItem('qsams_organizer_session_duration_minutes');
 
@@ -82,6 +146,7 @@ export default function OrganizerDashboard() {
     }
 
     setEventId(savedEventId.toUpperCase());
+    if (savedEventName) setEventName(savedEventName);
     setDurationInput(String(durationMinutes));
     setSessionTimeLeft(remainingSeconds);
     setSessionStartedAt(startedAt);
@@ -90,17 +155,24 @@ export default function OrganizerDashboard() {
   }, []);
 
   // --- Effect: Token Rotation & Session Timer ---
+  // Fix #5: Each rotation now generates a nonce stored in the DB
   useEffect(() => {
     let rotationInterval;
     let tickInterval;
 
     if (isActive && eventId) {
-      const generateToken = () => {
+      const generateToken = async () => {
         const timestamp = Date.now();
-        const tokenStr = `${eventId.trim()}|${timestamp}`;
+        const nonce = generateNonce();
+        const tokenStr = `${eventId.trim()}|${timestamp}|${nonce}`;
         const currentOrigin = window.location.origin;
         setSecureToken(`${currentOrigin}/?scan=${encodeURIComponent(tokenStr)}`);
         setTimeLeft(30); 
+        // Store nonce in database for student-side verification
+        await supabase
+          .from('events')
+          .update({ current_token: nonce })
+          .eq('event_id', eventId.trim().toUpperCase());
       };
       
       generateToken();
@@ -127,13 +199,14 @@ export default function OrganizerDashboard() {
   }, [isActive, eventId]);
 
   // --- Handlers: Session Management ---
+  // Fix #8: Now uses event name + auto-generated event code
   const handleStartSession = async () => {
     if (isStartingSession) return;
     
-    const cleanEventId = eventId.trim().toUpperCase();
-    if (cleanEventId.length === 0) {
+    const cleanEventName = eventName.trim();
+    if (cleanEventName.length === 0) {
       setOrganizerMessageType('error');
-      setOrganizerMessage('Please enter an Event ID before starting.');
+      setOrganizerMessage('Please enter an Event Name before starting.');
       return;
     }
     const duration = parseInt(durationInput, 10);
@@ -146,14 +219,15 @@ export default function OrganizerDashboard() {
     setIsStartingSession(true);
     setOrganizerMessage('');
 
+    const generatedCode = generateEventCode();
     const startedAt = Date.now();
     const endTimeIso = new Date(startedAt + duration * 60000).toISOString();
 
     const { error } = await supabase
       .from('events')
       .upsert({ 
-          event_id: cleanEventId, 
-          event_name: `Session: ${cleanEventId}`, 
+          event_id: generatedCode, 
+          event_name: cleanEventName, 
           event_date: new Date().toISOString().split('T')[0],
           end_time: endTimeIso,
         }, { onConflict: 'event_id' });
@@ -164,7 +238,8 @@ export default function OrganizerDashboard() {
       setOrganizerMessageType('error');
       setOrganizerMessage('Database error while saving the event. Please try again.');
       logEvent('session_start_error', 'Database error while saving event', {
-        event_id: cleanEventId,
+        event_id: generatedCode,
+        event_name: cleanEventName,
         duration_minutes: duration,
         error_message: error.message,
         error_code: error.code,
@@ -173,8 +248,8 @@ export default function OrganizerDashboard() {
     }
 
     if (typeof window !== 'undefined') {
-      
-      localStorage.setItem('qsams_organizer_event_id', cleanEventId);
+      localStorage.setItem('qsams_organizer_event_id', generatedCode);
+      localStorage.setItem('qsams_organizer_event_name', cleanEventName);
       localStorage.setItem('qsams_organizer_session_start', String(startedAt));
       localStorage.setItem('qsams_organizer_session_duration_minutes', String(duration));
     }
@@ -183,11 +258,12 @@ export default function OrganizerDashboard() {
     setSessionDurationMinutes(duration);
     setSessionTimeLeft(duration * 60);
     setIsActive(true);
-    setEventId(cleanEventId); 
+    setEventId(generatedCode); 
     setOrganizerMessageType('success');
-    setOrganizerMessage(`Session started for event "${cleanEventId}".`);
+    setOrganizerMessage(`Session started! Event Code: ${generatedCode}`);
     logEvent('session_start', 'Session started', {
-      event_id: cleanEventId,
+      event_id: generatedCode,
+      event_name: cleanEventName,
       duration_minutes: duration,
       end_time: endTimeIso,
     });
@@ -212,8 +288,6 @@ export default function OrganizerDashboard() {
 
     setSessionTimeLeft((prev) => prev + extraMinutes * 60);
   };
-
-  const [liveAttendance, setLiveAttendance] = useState([]);
 
   // --- Effect: Real-time Attendance Updates ---
   useEffect(() => {
@@ -252,12 +326,10 @@ export default function OrganizerDashboard() {
 
     fetchStats();
 
-    
     const pollInterval = setInterval(() => {
       if (!cancelled) fetchStats();
     }, 5000);
 
-    
     const channel = supabase
       .channel(`attendance_${eventId.trim().toUpperCase()}`)
       .on(
@@ -270,7 +342,6 @@ export default function OrganizerDashboard() {
         },
         (payload) => {
           if (cancelled) return;
-          
           const newAttendance = payload.new;
           setLiveAttendance(prev => [newAttendance, ...prev]);
           setAttendanceStats(prev => ({
@@ -296,6 +367,7 @@ export default function OrganizerDashboard() {
   };
   
   // --- Handlers: Data Export & History ---
+  // Fix #11: CSV fields are now sanitized against formula injection
   const exportToCSV = async () => {
     if (isExportingCsv || !eventId.trim()) return;
     setIsExportingCsv(true);
@@ -330,7 +402,7 @@ export default function OrganizerDashboard() {
     let csvContent = "Student ID,Scan Time\n";
     data.forEach(row => {
       const time = new Date(row.created_at).toLocaleString();
-      csvContent += `${row.student_id},"${time}"\n`;
+      csvContent += `${sanitizeCSVField(row.student_id)},"${sanitizeCSVField(time)}"\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -355,7 +427,6 @@ export default function OrganizerDashboard() {
     setOrganizerMessage('');
 
     try {
-      
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select('event_id, event_name, event_date, end_time')
@@ -364,7 +435,6 @@ export default function OrganizerDashboard() {
 
       if (eventsError) throw eventsError;
 
-      
       const eventsWithCounts = await Promise.all(
         eventsData.map(async (event) => {
           const { count, error: countError } = await supabase
@@ -394,14 +464,14 @@ export default function OrganizerDashboard() {
     }
   };
 
-  const exportEventCSV = async (eventId) => {
+  const exportEventCSV = async (targetEventId) => {
     setIsExportingCsv(true);
     setOrganizerMessage('');
 
     const { data, error } = await supabase
       .from('attendance')
       .select('student_id, created_at')
-      .eq('event_id', eventId);
+      .eq('event_id', targetEventId);
 
     if (error) {
       setIsExportingCsv(false);
@@ -420,24 +490,63 @@ export default function OrganizerDashboard() {
     let csvContent = "Student ID,Scan Time\n";
     data.forEach(row => {
       const time = new Date(row.created_at).toLocaleString();
-      csvContent += `${row.student_id},"${time}"\n`;
+      csvContent += `${sanitizeCSVField(row.student_id)},"${sanitizeCSVField(time)}"\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Attendance_${eventId}.csv`);
+    link.setAttribute("download", `Attendance_${targetEventId}.csv`);
     link.click();
 
     setIsExportingCsv(false);
     setOrganizerMessageType('success');
-    setOrganizerMessage(`CSV exported for event "${eventId}".`);
+    setOrganizerMessage(`CSV exported for event "${targetEventId}".`);
   };
+
+  // --- UI View: Auth Gate (Fix #1) ---
+  if (!isAuthenticated) {
+    return (
+      <div className="card organizer-card">
+        <h2>Organizer Login</h2>
+        <p style={{ color: '#666', fontSize: '0.85rem', margin: '-15px 0 20px 0', textAlign: 'center' }}>
+          Enter the organizer password to continue
+        </p>
+        <div className="manual-form">
+          <input
+            type="password"
+            placeholder="Password"
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleLogin();
+              }
+            }}
+            className="input-field"
+          />
+          <button className="btn btn-primary" onClick={handleLogin}>
+            Login
+          </button>
+        </div>
+        {authError && (
+          <div
+            className="message-box"
+            role="alert"
+            aria-live="assertive"
+            style={{ color: '#990000', backgroundColor: '#ffe6e6' }}
+          >
+            {authError}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // --- UI View: Fullscreen Presentation ---
   if (isFullscreen && isActive) {
-    
     if (isMobile) {
       return (
         <div className="fullscreen-overlay mobile-fullscreen">
@@ -470,8 +579,11 @@ export default function OrganizerDashboard() {
               className="fullscreen-title"
               style={{ fontSize: '1.4rem', margin: 0, wordBreak: 'break-word' }}
             >
-              Event: {eventId.trim()}
+              {eventName || eventId.trim()}
             </h1>
+            <p style={{ fontSize: '0.95rem', color: '#333', margin: 0 }}>
+              Event Code: <strong>{eventId.trim()}</strong>
+            </p>
 
             {sessionTimeLeft > 0 ? (
               <>
@@ -516,7 +628,6 @@ export default function OrganizerDashboard() {
       );
     }
 
-    
     return (
       <div className="fullscreen-overlay">
         <button
@@ -529,7 +640,10 @@ export default function OrganizerDashboard() {
           ✖ Exit Presentation
         </button>
 
-        <h1 className="fullscreen-title">Event: {eventId.trim()}</h1>
+        <h1 className="fullscreen-title">{eventName || eventId.trim()}</h1>
+        <p style={{ fontSize: '1.5rem', color: '#333', margin: '0 0 10px 0' }}>
+          Event Code: <strong>{eventId.trim()}</strong>
+        </p>
 
         {sessionTimeLeft > 0 ? (
           <>
@@ -600,8 +714,8 @@ export default function OrganizerDashboard() {
       )}
       {!isActive ? (
         <div className="manual-form">
-          <input type="text" placeholder="Event ID" className="input-field" 
-            value={eventId} onChange={(e) => setEventId(e.target.value.toUpperCase())} />
+          <input type="text" placeholder="Event Name" className="input-field" 
+            value={eventName} onChange={(e) => setEventName(e.target.value)} />
           <input type="number" placeholder="Duration (minutes)" className="input-field" 
             value={durationInput} onChange={(e) => setDurationInput(e.target.value)} />
           <button
@@ -615,7 +729,7 @@ export default function OrganizerDashboard() {
       ) : (
         <>
           <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 10px', borderRadius: '6px', display: 'inline-block', margin: '0 0 5px 0' }}>
-            Active Event: <strong>{eventId.trim()}</strong>
+            {eventName && <><strong>{eventName}</strong> — </>}Code: <strong>{eventId.trim()}</strong>
           </p>
           <p style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '1.1rem', margin: '0 0 6px 0' }}>
             Time Left: {formatTime(sessionTimeLeft)}
@@ -669,6 +783,7 @@ export default function OrganizerDashboard() {
                   setIsActive(false);
                   setSessionTimeLeft(0);
                   setEventId('');
+                  setEventName('');
                   setSessionStartedAt(null);
                   setSessionDurationMinutes(null);
                   setAttendanceStats({
@@ -838,7 +953,7 @@ export default function OrganizerDashboard() {
               </div>
             ) : (
               <div style={{ padding: '10px' }}>
-                {pastEvents.map((event, idx) => (
+                {pastEvents.map((event) => (
                   <div
                     key={event.event_id}
                     style={{
@@ -854,12 +969,10 @@ export default function OrganizerDashboard() {
                   >
                     <div>
                       <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '4px' }}>
-                        {event.event_id}
+                        {event.event_name || event.event_id}
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                        {event.event_name && event.event_name !== `Session: ${event.event_id}` 
-                          ? event.event_name 
-                          : `Session: ${event.event_id}`}
+                        Code: {event.event_id}
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#666' }}>
                         {new Date(event.event_date).toLocaleDateString()} • 
