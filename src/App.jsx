@@ -1,14 +1,18 @@
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
 import OrganizerDashboard from './pages/OrganizerDashboard';
 import StudentDashboard from './pages/StudentDashboard';
+import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import ndmcLogo from './assets/NDMC_Seal.png';
 
 function App() {
+  const [appState, setAppState] = useState('hidden-state');
+
   return (
     <Router>
-    
-      <div className="qsams-container">
+      <LoadingScreen onSlideUp={() => setAppState('app-content-enter')} />
+      <div className={`qsams-container ${appState}`}>
         {/* Navigation Section */}
         <nav className="top-nav">
           <img src="/vite.png" alt="School Seal" className="school-seal-img" />
