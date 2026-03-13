@@ -23,7 +23,7 @@ export default function StudentDashboard() {
   // --- Helper: Success Feedback (Vibration & Audio) ---
   const triggerSuccessFeedback = () => {
     if ("vibrate" in navigator) {
-      navigator.vibrate([100, 50, 100]); 
+      navigator.vibrate([100, 50, 100]);
     }
 
     try {
@@ -32,8 +32,8 @@ export default function StudentDashboard() {
       const gainNode = audioCtx.createGain();
 
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
-      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1); 
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1);
 
       gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
@@ -57,7 +57,7 @@ export default function StudentDashboard() {
     };
 
     setScanHistory(prev => {
-      const updated = [newScan, ...prev].slice(0, 10); 
+      const updated = [newScan, ...prev].slice(0, 10);
       localStorage.setItem('qsams_scan_history', JSON.stringify(updated));
       return updated;
     });
@@ -137,7 +137,7 @@ export default function StudentDashboard() {
       const startCamera = async () => {
         try {
           await new Promise(resolve => setTimeout(resolve, 200));
-          
+
           const element = document.getElementById("reader");
           if (!element) {
             console.error("Scanner element not found");
@@ -146,11 +146,11 @@ export default function StudentDashboard() {
 
           html5QrCode = new Html5Qrcode("reader");
           scannerRef.current = html5QrCode;
-          
+
           await html5QrCode.start(
             { facingMode: "environment" },
-            { 
-              fps: 10, 
+            {
+              fps: 10,
               qrbox: { width: 250, height: 250 },
               aspectRatio: 1.0
             },
@@ -167,7 +167,7 @@ export default function StudentDashboard() {
               processScan(decodedText);
             }
           ).catch(err => {
-            throw err; 
+            throw err;
           });
         } catch (err) {
           console.error("Scanner error:", err);
@@ -184,14 +184,13 @@ export default function StudentDashboard() {
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.stop().catch(() => { });
         scannerRef.current = null;
       }
     };
   }, [isScanning]);
 
   // --- Handlers: Registration & Logout ---
-  // Fix #4: Validate student ID against the students table in the database
   const handleRegister = async (e) => {
     e.preventDefault();
     const cleanId = studentId.trim();
@@ -239,8 +238,6 @@ export default function StudentDashboard() {
   };
 
   // --- Handler: QR Code Processing ---
-  // Fix #3/#5/#7: Removed localStorage duplicate checks (server-side only),
-  // added QR nonce verification against database
   const processScan = async (decodedText) => {
     let token = decodedText;
     try {
@@ -292,11 +289,10 @@ export default function StudentDashboard() {
   };
 
   // --- Handler: Manual Entry Submission ---
-  // Fix #3/#7: Removed localStorage duplicate checks, rely on DB constraint
   const handleManualSubmit = () => {
     if (!manualId.trim()) return;
     const cleanEventId = manualId.trim().toUpperCase();
-    setManualId('');  
+    setManualId('');
     submitAttendance(cleanEventId);
   };
 
@@ -334,7 +330,7 @@ export default function StudentDashboard() {
         event_id: cleanEventId,
         student_id: studentId,
       });
-      setTimeout(() => setMessage(''), 4000); 
+      setTimeout(() => setMessage(''), 4000);
     }
   };
 
@@ -454,8 +450,8 @@ export default function StudentDashboard() {
                       Total events attended: <strong>{fullHistory.length}</strong>
                     </div>
                     {fullHistory.map((record, index) => (
-                      <div key={record.event_id + index} style={{ 
-                        padding: '10px', 
+                      <div key={record.event_id + index} style={{
+                        padding: '10px',
                         marginBottom: '8px',
                         backgroundColor: '#fafafa',
                         borderRadius: '6px',

@@ -12,16 +12,16 @@ export default function OrganizerDashboard() {
   // --- UI & Session State ---
   const [isActive, setIsActive] = useState(false);
   const [secureToken, setSecureToken] = useState('');
-  const [timeLeft, setTimeLeft] = useState(30); 
+  const [timeLeft, setTimeLeft] = useState(30);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [eventId, setEventId] = useState(''); 
+  const [eventId, setEventId] = useState('');
   const [eventName, setEventName] = useState('');
-  const [durationInput, setDurationInput] = useState('15'); 
-  const [sessionTimeLeft, setSessionTimeLeft] = useState(0); 
+  const [durationInput, setDurationInput] = useState('15');
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [sessionStartedAt, setSessionStartedAt] = useState(null);
   const [sessionDurationMinutes, setSessionDurationMinutes] = useState(null);
-  
+
   // --- Attendance & History State ---
   const [attendanceStats, setAttendanceStats] = useState({
     total: 0,
@@ -30,7 +30,7 @@ export default function OrganizerDashboard() {
   });
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [organizerMessage, setOrganizerMessage] = useState('');
-  const [organizerMessageType, setOrganizerMessageType] = useState('info'); 
+  const [organizerMessageType, setOrganizerMessageType] = useState('info');
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -48,7 +48,6 @@ export default function OrganizerDashboard() {
   };
 
   // --- Utility Helpers ---
-  // Fix #8: Auto-generate short, easy-to-type event codes
   const generateEventCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
@@ -60,7 +59,6 @@ export default function OrganizerDashboard() {
     return code;
   };
 
-  // Fix #5: Generate cryptographic nonce for QR anti-forgery
   const generateNonce = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let nonce = '';
@@ -72,7 +70,6 @@ export default function OrganizerDashboard() {
     return nonce;
   };
 
-  // Fix #11: Sanitize CSV fields to prevent formula injection
   const sanitizeCSVField = (value) => {
     const strValue = String(value);
     if (/^[=+\-@\t\r]/.test(strValue)) {
@@ -155,7 +152,6 @@ export default function OrganizerDashboard() {
   }, []);
 
   // --- Effect: Token Rotation & Session Timer ---
-  // Fix #5: Each rotation now generates a nonce stored in the DB
   useEffect(() => {
     let rotationInterval;
     let tickInterval;
@@ -167,23 +163,23 @@ export default function OrganizerDashboard() {
         const tokenStr = `${eventId.trim()}|${timestamp}|${nonce}`;
         const currentOrigin = window.location.origin;
         setSecureToken(`${currentOrigin}/?scan=${encodeURIComponent(tokenStr)}`);
-        setTimeLeft(30); 
+        setTimeLeft(30);
         // Store nonce in database for student-side verification
         await supabase
           .from('events')
           .update({ current_token: nonce })
           .eq('event_id', eventId.trim().toUpperCase());
       };
-      
+
       generateToken();
-      rotationInterval = setInterval(generateToken, 30000); 
-      
+      rotationInterval = setInterval(generateToken, 30000);
+
       tickInterval = setInterval(() => {
         setTimeLeft((prev) => (prev > 0 ? prev - 1 : 30));
-        
+
         setSessionTimeLeft((prevSession) => {
           if (prevSession <= 1) {
-            clearInterval(rotationInterval); 
+            clearInterval(rotationInterval);
             clearOrganizerSessionStorage();
             return 0;
           }
@@ -199,10 +195,9 @@ export default function OrganizerDashboard() {
   }, [isActive, eventId]);
 
   // --- Handlers: Session Management ---
-  // Fix #8: Now uses event name + auto-generated event code
   const handleStartSession = async () => {
     if (isStartingSession) return;
-    
+
     const cleanEventName = eventName.trim();
     if (cleanEventName.length === 0) {
       setOrganizerMessageType('error');
@@ -225,12 +220,12 @@ export default function OrganizerDashboard() {
 
     const { error } = await supabase
       .from('events')
-      .upsert({ 
-          event_id: generatedCode, 
-          event_name: cleanEventName, 
-          event_date: new Date().toISOString().split('T')[0],
-          end_time: endTimeIso,
-        }, { onConflict: 'event_id' });
+      .upsert({
+        event_id: generatedCode,
+        event_name: cleanEventName,
+        event_date: new Date().toISOString().split('T')[0],
+        end_time: endTimeIso,
+      }, { onConflict: 'event_id' });
 
     setIsStartingSession(false);
 
@@ -258,7 +253,7 @@ export default function OrganizerDashboard() {
     setSessionDurationMinutes(duration);
     setSessionTimeLeft(duration * 60);
     setIsActive(true);
-    setEventId(generatedCode); 
+    setEventId(generatedCode);
     setOrganizerMessageType('success');
     setOrganizerMessage(`Session started! Event Code: ${generatedCode}`);
     logEvent('session_start', 'Session started', {
@@ -303,7 +298,7 @@ export default function OrganizerDashboard() {
         .select('student_id, created_at', { count: 'exact' })
         .eq('event_id', cleanId)
         .order('created_at', { ascending: false })
-        .limit(50); 
+        .limit(50);
 
       if (cancelled) return;
 
@@ -315,10 +310,10 @@ export default function OrganizerDashboard() {
       } else {
         setAttendanceStats({
           total: typeof count === 'number' ? count : (data ? data.length : 0),
-          recent: data ? data.slice(0, 3) : [], 
+          recent: data ? data.slice(0, 3) : [],
           error: null,
         });
-        setLiveAttendance(data || []); 
+        setLiveAttendance(data || []);
       }
 
       setIsLoadingStats(false);
@@ -347,7 +342,7 @@ export default function OrganizerDashboard() {
           setAttendanceStats(prev => ({
             ...prev,
             total: prev.total + 1,
-            recent: [newAttendance, ...prev.recent.slice(0, 2)], 
+            recent: [newAttendance, ...prev.recent.slice(0, 2)],
           }));
         }
       )
@@ -365,9 +360,8 @@ export default function OrganizerDashboard() {
     const s = totalSeconds % 60;
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
-  
+
   // --- Handlers: Data Export & History ---
-  // Fix #11: CSV fields are now sanitized against formula injection
   const exportToCSV = async () => {
     if (isExportingCsv || !eventId.trim()) return;
     setIsExportingCsv(true);
@@ -699,14 +693,14 @@ export default function OrganizerDashboard() {
               organizerMessageType === 'error'
                 ? '#ffe6e6'
                 : organizerMessageType === 'success'
-                ? '#e6ffed'
-                : '#e0e0e0',
+                  ? '#e6ffed'
+                  : '#e0e0e0',
             color:
               organizerMessageType === 'error'
                 ? '#990000'
                 : organizerMessageType === 'success'
-                ? '#004d26'
-                : '#000000',
+                  ? '#004d26'
+                  : '#000000',
           }}
         >
           {organizerMessage}
@@ -714,9 +708,9 @@ export default function OrganizerDashboard() {
       )}
       {!isActive ? (
         <div className="manual-form">
-          <input type="text" placeholder="Event Name" className="input-field" 
+          <input type="text" placeholder="Event Name" className="input-field"
             value={eventName} onChange={(e) => setEventName(e.target.value)} />
-          <input type="number" placeholder="Duration (minutes)" className="input-field" 
+          <input type="number" placeholder="Duration (minutes)" className="input-field"
             value={durationInput} onChange={(e) => setDurationInput(e.target.value)} />
           <button
             className="btn btn-primary"
@@ -797,46 +791,46 @@ export default function OrganizerDashboard() {
               </button>
             </div>
           )}
-          
-         <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: '15px',
-            alignItems: 'flex-start',
-            width: '100%',
-            flexWrap: 'wrap',
-          }}
-        >
-  
-          {/* QR Display */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
-            <QRCodeSVG value={secureToken} size={160} level="H" />
-            <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 8px', borderRadius: '6px', marginTop: '10px', fontSize: '0.85rem' }}>
-              Next update: <strong>{timeLeft}s</strong>
-            </p>
-          </div>
 
-          {/* Session Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-            <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <button
-                className="btn btn-outline"
-                style={{ flex: '1 1 80px' }}
-                onClick={() => extendSession(5)}
-              >
-                +5 min
-              </button>
-              <button
-                className="btn btn-outline"
-                style={{ flex: '1 1 80px' }}
-                onClick={() => extendSession(10)}
-              >
-                +10 min
-              </button>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              gap: '15px',
+              alignItems: 'flex-start',
+              width: '100%',
+              flexWrap: 'wrap',
+            }}
+          >
+
+            {/* QR Display */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
+              <QRCodeSVG value={secureToken} size={160} level="H" />
+              <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 8px', borderRadius: '6px', marginTop: '10px', fontSize: '0.85rem' }}>
+                Next update: <strong>{timeLeft}s</strong>
+              </p>
             </div>
-            <button className="btn btn-danger" onClick={() => {
+
+            {/* Session Controls */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+              <button className="btn btn-outline" onClick={() => setIsFullscreen(true)}>📺 Fullscreen</button>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-outline"
+                  style={{ flex: '1 1 80px' }}
+                  onClick={() => extendSession(5)}
+                >
+                  +5 min
+                </button>
+                <button
+                  className="btn btn-outline"
+                  style={{ flex: '1 1 80px' }}
+                  onClick={() => extendSession(10)}
+                >
+                  +10 min
+                </button>
+              </div>
+              <button className="btn btn-danger" onClick={() => {
                 if (window.confirm("Are you sure you want to stop the session?")) {
                   const currentEventId = eventId.trim();
                   clearOrganizerSessionStorage();
@@ -856,68 +850,68 @@ export default function OrganizerDashboard() {
                   });
                 }
               }}>Stop Session</button>
-            <button
-              className="btn btn-outline"
-              onClick={exportToCSV}
-              disabled={isExportingCsv}
+              <button
+                className="btn btn-outline"
+                onClick={exportToCSV}
+                disabled={isExportingCsv}
+              >
+                {isExportingCsv ? 'Exporting…' : '📊 Export CSV'}
+              </button>
+            </div>
+
+            {/* Stats Overview */}
+            <div
+              style={{
+                marginLeft: '10px',
+                marginTop: '10px',
+                padding: '8px 10px',
+                borderRadius: '8px',
+                border: '1px solid #ddd',
+                backgroundColor: '#fafafa',
+                flex: '1 1 220px',
+                boxSizing: 'border-box',
+              }}
             >
-              {isExportingCsv ? 'Exporting…' : '📊 Export CSV'}
-            </button>
-          </div>
-
-          {/* Stats Overview */}
-          <div
-            style={{
-              marginLeft: '10px',
-              marginTop: '10px',
-              padding: '8px 10px',
-              borderRadius: '8px',
-              border: '1px solid #ddd',
-              backgroundColor: '#fafafa',
-              flex: '1 1 220px',
-              boxSizing: 'border-box',
-            }}
-          >
-            <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', fontSize: '0.9rem' }}>
-              Attendance Overview
-            </p>
-            {isLoadingStats ? (
-              <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>Loading...</p>
-            ) : attendanceStats.error ? (
-              <p style={{ margin: 0, fontSize: '0.8rem', color: '#b30000' }}>
-                {attendanceStats.error}
+              <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                Attendance Overview
               </p>
-            ) : (
-              <>
-                <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem' }}>
-                  Total scans:{' '}
-                  <strong>{attendanceStats.total}</strong>
+              {isLoadingStats ? (
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#666' }}>Loading...</p>
+              ) : attendanceStats.error ? (
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#b30000' }}>
+                  {attendanceStats.error}
                 </p>
-                {attendanceStats.recent && attendanceStats.recent.length > 0 && (
-                  <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-                    <p style={{ margin: '0 0 2px 0', fontWeight: 'bold' }}>Last attendees:</p>
-                    <ul style={{ margin: 0, paddingLeft: '16px' }}>
-                      {attendanceStats.recent.map((row, idx) => (
-                        <li key={row.student_id + idx} style={{ marginBottom: '2px' }}>
-                          <span>{row.student_id}</span>{' '}
-                          <span style={{ color: '#666' }}>
-                            (
-                            {new Date(row.created_at).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                            )
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem' }}>
+                    Total scans:{' '}
+                    <strong>{attendanceStats.total}</strong>
+                  </p>
+                  {attendanceStats.recent && attendanceStats.recent.length > 0 && (
+                    <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+                      <p style={{ margin: '0 0 2px 0', fontWeight: 'bold' }}>Last attendees:</p>
+                      <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                        {attendanceStats.recent.map((row, idx) => (
+                          <li key={row.student_id + idx} style={{ marginBottom: '2px' }}>
+                            <span>{row.student_id}</span>{' '}
+                            <span style={{ color: '#666' }}>
+                              (
+                              {new Date(row.created_at).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                              )
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
-        </div>
+          </div>
         </>
       )}
 
@@ -975,7 +969,7 @@ export default function OrganizerDashboard() {
                         Code: {event.event_id}
                       </div>
                       <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                        {new Date(event.event_date).toLocaleDateString()} • 
+                        {new Date(event.event_date).toLocaleDateString()} •
                         {event.end_time ? new Date(event.end_time).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit'
