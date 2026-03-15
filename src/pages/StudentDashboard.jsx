@@ -355,13 +355,15 @@ export default function StudentDashboard() {
           Enter your Student ID to continue
         </p>
         <div className="manual-form">
-          <input
-            type="text"
-            placeholder="Enter Student ID"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            className="input-field"
-          />
+          <div className="input-container">
+            <input
+              type="text"
+              required
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+            />
+            <label>Enter Student ID</label>
+          </div>
           <button onClick={handleRegister} className="btn btn-primary">Save ID</button>
         </div>
         {isLoading ? (
@@ -404,20 +406,22 @@ export default function StudentDashboard() {
           </div>
           {showManual && (
             <div className="manual-form">
-              <input
-                type="text"
-                placeholder="Event Code"
-                value={manualId}
-                onChange={(e) => setManualId(e.target.value.toUpperCase())}
-                className="input-field"
-                ref={manualInputRef}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleManualSubmit();
-                  }
-                }}
-              />
+              <div className="input-container">
+                <input
+                  type="text"
+                  required
+                  value={manualId}
+                  onChange={(e) => setManualId(e.target.value.toUpperCase())}
+                  ref={manualInputRef}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleManualSubmit();
+                    }
+                  }}
+                />
+                <label>Event Code</label>
+              </div>
               <button className="btn btn-primary" onClick={handleManualSubmit}>Submit</button>
               <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
                 Ask your organizer for the Event Code.

@@ -16,7 +16,7 @@ export default function OrganizerDashboard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [eventId, setEventId] = useState('');
   const [eventName, setEventName] = useState('');
-  const [durationInput, setDurationInput] = useState('15');
+  const [durationInput, setDurationInput] = useState('');
   const [sessionTimeLeft, setSessionTimeLeft] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [sessionStartedAt, setSessionStartedAt] = useState(null);
@@ -508,19 +508,21 @@ export default function OrganizerDashboard() {
           Enter the organizer password to continue
         </p>
         <div className="manual-form">
-          <input
-            type="password"
-            placeholder="Password"
-            value={passwordInput}
-            onChange={(e) => setPasswordInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleLogin();
-              }
-            }}
-            className="input-field"
-          />
+          <div className="input-container">
+            <input
+              type="password"
+              required
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleLogin();
+                }
+              }}
+            />
+            <label>Password</label>
+          </div>
           <button className="btn btn-primary" onClick={handleLogin}>
             Login
           </button>
@@ -708,10 +710,16 @@ export default function OrganizerDashboard() {
       )}
       {!isActive ? (
         <div className="manual-form">
-          <input type="text" placeholder="Event Name" className="input-field"
-            value={eventName} onChange={(e) => setEventName(e.target.value)} />
-          <input type="number" placeholder="Duration (minutes)" className="input-field"
-            value={durationInput} onChange={(e) => setDurationInput(e.target.value)} />
+          <div className="input-container">
+            <input type="text" required
+              value={eventName} onChange={(e) => setEventName(e.target.value)} />
+            <label>Event Name</label>
+          </div>
+          <div className="input-container">
+            <input type="number" required
+              value={durationInput} onChange={(e) => setDurationInput(e.target.value)} />
+            <label>Duration (minutes)</label>
+          </div>
           <button
             className="btn btn-primary"
             onClick={handleStartSession}
