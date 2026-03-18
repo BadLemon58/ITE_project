@@ -21,6 +21,7 @@ export default function OrganizerDashboard() {
   const [isMobile, setIsMobile] = useState(false);
   const [sessionStartedAt, setSessionStartedAt] = useState(null);
   const [sessionDurationMinutes, setSessionDurationMinutes] = useState(null);
+  const [currentNonce, setCurrentNonce] = useState('');
 
   // --- Attendance & History State ---
   const [attendanceStats, setAttendanceStats] = useState({
@@ -60,11 +61,11 @@ export default function OrganizerDashboard() {
   };
 
   const generateNonce = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let nonce = '';
-    const array = new Uint8Array(8);
+    const array = new Uint8Array(6);
     crypto.getRandomValues(array);
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       nonce += chars[array[i] % chars.length];
     }
     return nonce;
@@ -160,6 +161,7 @@ export default function OrganizerDashboard() {
       const generateToken = async () => {
         const timestamp = Date.now();
         const nonce = generateNonce();
+        setCurrentNonce(nonce);
         const tokenStr = `${eventId.trim()}|${timestamp}|${nonce}`;
         const currentOrigin = window.location.origin;
         setSecureToken(`${currentOrigin}/?scan=${encodeURIComponent(tokenStr)}`);
@@ -578,7 +580,7 @@ export default function OrganizerDashboard() {
               {eventName || eventId.trim()}
             </h1>
             <p style={{ fontSize: '0.95rem', color: '#333', margin: 0 }}>
-              Event Code: <strong>{eventId.trim()}</strong>
+              Live Code: <strong>{currentNonce || 'Generating...'}</strong>
             </p>
 
             {sessionTimeLeft > 0 ? (
@@ -638,7 +640,7 @@ export default function OrganizerDashboard() {
 
         <h1 className="fullscreen-title">{eventName || eventId.trim()}</h1>
         <p style={{ fontSize: '1.5rem', color: '#333', margin: '0 0 10px 0' }}>
-          Event Code: <strong>{eventId.trim()}</strong>
+          Live Code: <strong>{currentNonce || 'Generating...'}</strong>
         </p>
 
         {sessionTimeLeft > 0 ? (
@@ -731,7 +733,7 @@ export default function OrganizerDashboard() {
       ) : (
         <>
           <p style={{ backgroundColor: '#e0e0e0', color: '#000000', padding: '4px 10px', borderRadius: '6px', display: 'inline-block', margin: '0 0 5px 0' }}>
-            {eventName && <><strong>{eventName}</strong> — </>}Code: <strong>{eventId.trim()}</strong>
+            {eventName && <><strong>{eventName}</strong> — </>}Live Code: <strong style={{color: '#cc0000'}}>{currentNonce || '...'}</strong> (ID: {eventId.trim()})
           </p>
           <p style={{ color: '#cc0000', fontWeight: 'bold', fontSize: '1.1rem', margin: '0 0 6px 0' }}>
             Time Left: {formatTime(sessionTimeLeft)}
@@ -788,6 +790,7 @@ export default function OrganizerDashboard() {
                   setEventName('');
                   setSessionStartedAt(null);
                   setSessionDurationMinutes(null);
+                  setCurrentNonce('');
                   setAttendanceStats({
                     total: 0,
                     recent: [],
@@ -846,6 +849,7 @@ export default function OrganizerDashboard() {
                   setSessionTimeLeft(0);
                   setSessionStartedAt(null);
                   setSessionDurationMinutes(null);
+                  setCurrentNonce('');
                   setAttendanceStats({
                     total: 0,
                     recent: [],

@@ -289,11 +289,27 @@ export default function StudentDashboard() {
   };
 
   // --- Handler: Manual Entry Submission ---
-  const handleManualSubmit = () => {
+  const handleManualSubmit = async () => {
     if (!manualId.trim()) return;
-    const cleanEventId = manualId.trim().toUpperCase();
+    const cleanCode = manualId.trim().toUpperCase();
     setManualId('');
-    submitAttendance(cleanEventId);
+    
+    setIsLoading(true);
+    setMessage('');
+
+    const { data: eventData, error: eventError } = await supabase
+      .from('events')
+      .select('event_id')
+      .eq('current_token', cleanCode)
+      .single();
+
+    if (eventError || !eventData) {
+      setIsLoading(false);
+      setMessage("Invalid or expired Event Code.");
+      return;
+    }
+
+    submitAttendance(eventData.event_id);
   };
 
   // --- Handler: Database Attendance Submission ---

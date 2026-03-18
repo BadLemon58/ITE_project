@@ -234,8 +234,8 @@ button:active {
   padding: 0 4px;
 }
 
-.input-container input:focus ~ label,
-.input-container input:valid ~ label {
+.input-container input:focus~label,
+.input-container input:valid~label {
   top: -10px;
   font-size: 0.85rem;
   opacity: 1;
@@ -300,6 +300,8 @@ button:active {
   align-items: center;
   padding: 20px;
   text-align: center;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .fullscreen-title {
@@ -410,7 +412,8 @@ button:focus-visible,
 }
 
 .app-content-enter {
-  animation: slideUpApp 0.8s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+  opacity: 1;
+  animation: slideUpApp 0.8s cubic-bezier(0.7, 0, 0.3, 1);
 }
 
 @keyframes slideUpApp {
@@ -421,6 +424,6 @@ button:focus-visible,
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
