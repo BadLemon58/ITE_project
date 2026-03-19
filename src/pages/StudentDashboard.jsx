@@ -318,6 +318,26 @@ export default function StudentDashboard() {
     setIsLoading(true);
     setMessage('');
 
+    // Check if already attended
+    const { data: existingAttendance, error: checkError } = await supabase
+      .from('attendance')
+      .select('id')
+      .eq('event_id', cleanEventId)
+      .eq('student_id', studentId)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+      setMessage('Error checking attendance: ' + checkError.message);
+      setIsLoading(false);
+      return;
+    }
+
+    if (existingAttendance) {
+      setMessage('You have already scanned for this event.');
+      setIsLoading(false);
+      return;
+    }
+
     const { error } = await supabase
       .from('attendance')
       .insert([{ event_id: cleanEventId, student_id: studentId }]);
@@ -327,8 +347,6 @@ export default function StudentDashboard() {
     if (error) {
       if (error.code === '23503') {
         setMessage(`Event "${cleanEventId}" is not found.`);
-      } else if (error.code === '23505') {
-        setMessage("You have already scanned for this event.");
       } else {
         setMessage(`Error: ${error.message}`);
       }
