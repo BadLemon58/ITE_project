@@ -318,6 +318,14 @@ export default function StudentDashboard() {
     setIsLoading(true);
     setMessage('');
 
+    // Check if this device has already scanned for this event
+    const deviceScanned = localStorage.getItem('scanned_' + cleanEventId);
+    if (deviceScanned) {
+      setMessage('This device has already been used to scan for this event.');
+      setIsLoading(false);
+      return;
+    }
+
     // Check if already attended
     const { data: existingAttendance, error: checkError } = await supabase
       .from('attendance')
@@ -359,6 +367,7 @@ export default function StudentDashboard() {
     } else {
       triggerSuccessFeedback();
       addToScanHistory(cleanEventId);
+      localStorage.setItem('scanned_' + cleanEventId, 'true');
       setMessage(`Success! Attendance logged for ${cleanEventId}.`);
       logEvent('attendance_success', 'Attendance logged', {
         event_id: cleanEventId,
@@ -427,8 +436,20 @@ export default function StudentDashboard() {
       {!isScanning ? (
         <>
           <div className="user-bar">
-            <span>ID: {studentId}</span>
-            <button onClick={handleLogout} className="logout-btn">Change ID</button>
+            <div className="input-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <label style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Student ID:</label>
+              <input
+                type="text"
+                value={studentId}
+                onChange={(e) => {
+                  const newId = e.target.value.toUpperCase();
+                  setStudentId(newId);
+                  localStorage.setItem('qsams_student_id', newId);
+                }}
+                style={{ width: '120px', padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+            </div>
+            <button onClick={handleLogout} className="logout-btn">Logout</button>
           </div>
 
           <h2>Student Portal</h2>
