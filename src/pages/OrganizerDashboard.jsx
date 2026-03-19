@@ -164,13 +164,13 @@ export default function OrganizerDashboard() {
         setCurrentNonce(nonce);
         const tokenStr = `${eventId.trim()}|${timestamp}|${nonce}`;
         const currentOrigin = window.location.origin;
-        setSecureToken(`${currentOrigin}/?scan=${encodeURIComponent(tokenStr)}`);
-        setTimeLeft(30);
         // Store nonce in database for student-side verification
         await supabase
           .from('events')
           .update({ current_token: nonce })
           .eq('event_id', eventId.trim().toUpperCase());
+        setSecureToken(`${currentOrigin}/?scan=${encodeURIComponent(tokenStr)}`);
+        setTimeLeft(30);
       };
 
       generateToken();
