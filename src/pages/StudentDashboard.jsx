@@ -326,7 +326,25 @@ export default function StudentDashboard() {
       return;
     }
 
-    // Check if already attended
+// Check if event already has attendance (single student per event enforcement)
+    const { count, error: countError } = await supabase
+      .from('attendance')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', cleanEventId);
+
+    if (countError) {
+      setMessage('Error checking event status: ' + countError.message);
+      setIsLoading(false);
+      return;
+    }
+
+    if (count > 0) {
+      setMessage('This event already has a recorded attendance. No additional scans allowed for other students.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Original personal duplicate check (backup)
     const { data: existingAttendance, error: checkError } = await supabase
       .from('attendance')
       .select('id')
@@ -369,6 +387,7 @@ export default function StudentDashboard() {
       triggerSuccessFeedback();
       addToScanHistory(cleanEventId);
       localStorage.setItem('scanned_' + cleanEventId, 'true');
+      localStorage.setItem('has_scanned', 'true');
       setMessage(`Success! Attendance logged for ${cleanEventId}.`);
       logEvent('attendance_success', 'Attendance logged', {
         event_id: cleanEventId,
@@ -436,20 +455,8 @@ export default function StudentDashboard() {
     <div className="card student-card">
       {!isScanning ? (
         <>
-          <div className="user-bar">
-            <div className="input-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Student ID:</label>
-              <input
-                type="text"
-                value={studentId}
-                onChange={(e) => {
-                  const newId = e.target.value.toUpperCase();
-                  setStudentId(newId);
-                  localStorage.setItem('qsams_student_id', newId);
-                }}
-                style={{ width: '120px', padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-            </div>
+          <div className="user-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1rem', fontWeight: '500', color: '#333' }}>Student ID: <strong>{studentId}</strong></span>
             <button onClick={handleLogout} className="logout-btn">Logout</button>
           </div>
 
