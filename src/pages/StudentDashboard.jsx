@@ -334,6 +334,7 @@ export default function StudentDashboard() {
       .eq('student_id', studentId)
       .single();
 
+      
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
       setMessage('Error checking attendance: ' + checkError.message);
       setIsLoading(false);
