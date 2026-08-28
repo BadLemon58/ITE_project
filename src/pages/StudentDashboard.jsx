@@ -326,25 +326,7 @@ export default function StudentDashboard() {
       return;
     }
 
-// Check if event already has attendance (single student per event enforcement)
-    const { count, error: countError } = await supabase
-      .from('attendance')
-      .select('*', { count: 'exact', head: true })
-      .eq('event_id', cleanEventId);
-
-    if (countError) {
-      setMessage('Error checking event status: ' + countError.message);
-      setIsLoading(false);
-      return;
-    }
-
-    if (count > 0) {
-      setMessage('This event already has a recorded attendance. No additional scans allowed for other students.');
-      setIsLoading(false);
-      return;
-    }
-
-    // Original personal duplicate check (backup)
+    // Check if this specific student has already scanned for this event
     const { data: existingAttendance, error: checkError } = await supabase
       .from('attendance')
       .select('id')
@@ -352,7 +334,6 @@ export default function StudentDashboard() {
       .eq('student_id', studentId)
       .single();
 
-      
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
       setMessage('Error checking attendance: ' + checkError.message);
       setIsLoading(false);
