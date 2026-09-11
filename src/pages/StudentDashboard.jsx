@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { supabase } from '../supabaseClient';
 import { logEvent } from '../lib/logEvent';
+import { BookOpenIcon, CloseIcon, CheckIcon } from '../components/Icons';
 
 export default function StudentDashboard() {
   // --- State Management ---
@@ -478,13 +479,15 @@ export default function StudentDashboard() {
           {showFullHistory && (
             <div className="full-history" style={{ marginTop: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ fontSize: '1.1rem', margin: 0, color: '#333' }}>📚 Complete Attendance History</h3>
+                <h3 style={{ fontSize: '1.1rem', margin: 0, color: '#333', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <BookOpenIcon size={18} /> Complete Attendance History
+                </h3>
                 <button
                   className="btn btn-outline"
                   onClick={() => setShowFullHistory(false)}
-                  style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+                  style={{ fontSize: '0.8rem', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                  ✕ Close
+                  <CloseIcon size={13} /> Close
                 </button>
               </div>
               <div style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '8px', padding: '10px' }}>
@@ -521,8 +524,8 @@ export default function StudentDashboard() {
                             })}
                           </div>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold' }}>
-                          ✓ Attended
+                        <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckIcon size={14} /> Attended
                         </div>
                       </div>
                     ))}
@@ -550,9 +553,9 @@ export default function StudentDashboard() {
                 className="btn btn-outline"
                 onClick={loadFullHistory}
                 disabled={isLoadingHistory}
-                style={{ fontSize: '0.85rem', padding: '8px 16px' }}
+                style={{ fontSize: '0.85rem', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                {isLoadingHistory ? 'Loading...' : '📚 View Complete Attendance History'}
+                {isLoadingHistory ? 'Loading...' : <><BookOpenIcon size={16} /> View Complete Attendance History</>}
               </button>
             </div>
           )}
